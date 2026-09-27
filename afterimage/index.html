@@ -133,6 +133,8 @@
   .fx-hint { font-size: 12px; color: var(--mute); }
   .fx.off .fx-name { color: var(--mute); }
   .fx-body { display: grid; gap: 12px; padding: 2px 0 16px 46px; }
+  .fx-body { grid-template-columns: minmax(0, 1fr); }
+  .fx[data-fx="expose"] .fx-body { padding-left: 0; }
 
   .switch { position: relative; width: 34px; height: 20px; flex: none; }
   .switch input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; }
@@ -159,8 +161,31 @@
   .swatch i { display: block; height: 14px; border-radius: 3px; border: 2px solid transparent; }
   .swatch[aria-pressed="true"] { color: var(--text); }
   .swatch[aria-pressed="true"] i { border-color: var(--text); }
-  .blend-src { display: flex; align-items: center; gap: 10px; }
-  .blend-src canvas { width: 54px; height: 40px; border-radius: 3px; object-fit: cover; background: var(--raise); }
+  .layers { display: grid; gap: 8px; }
+  .layers, .layer-body { grid-template-columns: minmax(0, 1fr); }
+  .panel > div, .layer { min-width: 0; }
+  .layer { border: 1px solid var(--line); border-radius: 6px; background: var(--raise); }
+  .layer.muted { opacity: .55; }
+  .layer-head { display: flex; align-items: center; gap: 8px; padding: 6px 8px; }
+  .layer-head canvas { width: 44px; height: 33px; border-radius: 3px; flex: none; background: var(--ink); }
+  .layer-name {
+    flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: flex-start;
+    border: 0; background: none; padding: 0; cursor: pointer; text-align: left;
+  }
+  .layer-name b { font-size: 12px; font-weight: 600; }
+  .layer-name small { font-size: 11px; color: var(--mute); max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .icon-btn {
+    width: 26px; height: 26px; flex: none; display: grid; place-items: center;
+    border: 1px solid transparent; border-radius: 4px; background: none; color: var(--mute); cursor: pointer; font-size: 13px; line-height: 1;
+  }
+  .icon-btn:hover:not(:disabled) { border-color: var(--line); color: var(--text); }
+  .icon-btn:disabled { opacity: .3; cursor: default; }
+  .layer-body { display: grid; gap: 12px; padding: 6px 10px 12px; border-top: 1px solid var(--line); }
+  .layer-base { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border: 1px dashed var(--line); border-radius: 6px; }
+  .layer-base canvas { width: 44px; height: 33px; border-radius: 3px; flex: none; }
+  .layer-base span { flex: 1; min-width: 0; font-size: 12px; color: var(--mute); }
+  .layer-add { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .layer-add .mono { flex: 1; }
   .check { display: flex; gap: 8px; align-items: center; font-size: 12px; color: #cfc8d6; grid-column: 1 / -1; }
   .check input { accent-color: var(--safelight); margin: 0; }
 
@@ -192,7 +217,8 @@
   <div class="actions">
     <label class="btn primary" for="file1">Open photo</label>
     <input type="file" id="file1" accept="image/*">
-    <input type="file" id="file2" accept="image/*">
+    <label class="btn" for="file2">Add layers</label>
+    <input type="file" id="file2" accept="image/*" multiple>
     <button class="btn" id="surprise" type="button">Surprise me</button>
     <button class="btn" id="save" type="button">Save image</button>
   </div>
@@ -205,7 +231,7 @@
       <span id="meta" class="mono"></span>
       <button id="compare" class="btn ghost" type="button">Hold to see original</button>
     </div>
-    <div class="drop" id="drop" hidden>Drop photo to open</div>
+    <div class="drop" id="drop" hidden>Drop photos: the first becomes the base, the rest become layers</div>
     <div class="comparing-tag" id="compTag" hidden>Original</div>
   </section>
 
@@ -253,15 +279,8 @@ const FX = [
     { k: 'hue',        label: 'Hue shift',  min: -180, max: 180, v: 0, unit: '°' },
     { k: 'black',      label: 'Crush blacks', min: 0, max: 100, v: 0 },
   ]},
-  { key: 'expose', name: 'Double exposure', hint: 'Layer a second photo into the first', c: [
-    { k: 'source', type: 'source' },
-    { k: 'mode', label: 'Blend', type: 'select', v: 'screen', opts: [['screen','Screen (lighten)'],['lighten','Lighten'],['overlay','Overlay'],['multiply','Multiply (darken)'],['difference','Difference (psychedelic)'],['darken','Darken']] },
-    { k: 'mask', label: 'Where it shows', type: 'select', v: 'full', opts: [['full','Whole frame'],['shadows','Inside the shadows'],['highlights','Inside the highlights'],['window','A glowing window']] },
-    { k: 'opacity',  label: 'Strength', min: 0, max: 100, v: 80, unit: '%' },
-    { k: 'scale',    label: 'Zoom second photo', min: 100, max: 300, v: 100, unit: '%' },
-    { k: 'winSize',  label: 'Window size', min: 15, max: 90, v: 45, unit: '%', when: s => s.mask === 'window' },
-    { k: 'winX',     label: 'Window position', min: 0, max: 100, v: 30, unit: '%', when: s => s.mask === 'window' },
-    { k: 'surround', label: 'Darken outside window', min: 0, max: 100, v: 60, unit: '%', when: s => s.mask === 'window' },
+  { key: 'expose', name: 'Layers', hint: 'Stack photos so their colors bleed into each other', c: [
+    { k: 'list', type: 'layers' },
   ]},
   { key: 'solar', name: 'Solarize', hint: 'Flip the brightest tones, like light hitting a print mid-develop', c: [
     { k: 'threshold', label: 'Flip above', min: 0, max: 255, v: 128 },
@@ -297,24 +316,60 @@ const FX = [
   ]},
 ];
 
-function defaults() {
+/* ---------- layer schema: each stacked photo gets its own copy of these ---------- */
+const BLENDS = [
+  ['screen', 'Screen (glow)'], ['colorbleed', 'Color bleed'], ['softlight', 'Soft light'], ['overlay', 'Overlay'],
+  ['hardlight', 'Hard light'], ['lighten', 'Lighten'], ['add', 'Add (hot glow)'], ['dodge', 'Color dodge'],
+  ['multiply', 'Multiply (darken)'], ['darken', 'Darken'], ['difference', 'Difference (psychedelic)'],
+  ['exclusion', 'Exclusion'], ['luminosity', 'Luminosity'],
+];
+const LAYER_C = [
+  { k: 'mode', label: 'Blend', type: 'select', v: 'screen', opts: BLENDS },
+  { k: 'mask', label: 'Where it shows', type: 'select', v: 'full', opts: [
+    ['full', 'Whole frame'], ['layerbright', 'This layer’s bright parts'], ['layerdark', 'This layer’s dark parts'],
+    ['shadows', 'Inside the shadows below'], ['highlights', 'Inside the highlights below'], ['window', 'A glowing window']] },
+  { k: 'opacity',  label: 'Strength', min: 0, max: 100, v: 70, unit: '%' },
+  { k: 'bleed',    label: 'Bleed (colors spread)', min: 0, max: 100, v: 20, unit: '%' },
+  { k: 'scale',    label: 'Zoom', min: 100, max: 300, v: 100, unit: '%' },
+  { k: 'panX',     label: 'Pan left / right', min: 0, max: 100, v: 50, unit: '%', when: s => s.scale > 100 },
+  { k: 'panY',     label: 'Pan up / down', min: 0, max: 100, v: 50, unit: '%', when: s => s.scale > 100 },
+  { k: 'winSize',  label: 'Window size', min: 15, max: 90, v: 45, unit: '%', when: s => s.mask === 'window' },
+  { k: 'winX',     label: 'Window position', min: 0, max: 100, v: 30, unit: '%', when: s => s.mask === 'window' },
+  { k: 'surround', label: 'Darken outside window', min: 0, max: 100, v: 60, unit: '%', when: s => s.mask === 'window' },
+];
+const MAX_LAYERS = 8;
+let layerUid = 0;
+function newLayer(name) {
+  const L = { uid: ++layerUid, name, on: true };
+  for (const c of LAYER_C) L[c.k] = c.v;
+  return L;
+}
+
+function defaults(layers) {
   const s = { seed: 7 };
   for (const fx of FX) {
     s[fx.key] = { on: false };
-    for (const c of fx.c) if (c.type !== 'source') s[fx.key][c.k] = c.v;
+    for (const c of fx.c) if (c.v !== undefined) s[fx.key][c.k] = c.v;
   }
+  s.layers = (layers || []).map(L => ({ ...L }));
   return s;
 }
-function withPreset(p) {
-  const s = defaults();
+// A recipe tunes the effects and, by position, the stacked layers. Layers past
+// the ones it mentions are switched off (their settings are kept).
+function withPreset(p, layers = state.layers) {
+  const s = defaults(layers);
   for (const k in p) {
     if (k === 'seed') s.seed = p.seed;
+    else if (k === 'layers') {
+      s.expose.on = true;
+      s.layers.forEach((L, i) => { if (p.layers[i]) Object.assign(L, { on: true }, p.layers[i]); else L.on = false; });
+    }
     else Object.assign(s[k], { on: true }, p[k]);
   }
   return s;
 }
 
-/* ---------- recipes, modelled on the three reference pieces ---------- */
+/* ---------- recipes, modelled on the reference pieces ---------- */
 const PRESETS = [
   { id: 'popeye', name: 'Pop Eye', p: {
     adjust: { contrast: 55, saturation: 230, black: 20, brightness: 5 },
@@ -322,9 +377,19 @@ const PRESETS = [
     gmap: { palette: 'popeye', amount: 35, hard: true },
     finish: { vignette: 0, grain: 4 },
   }},
+  { id: 'bleed', name: 'Color Bleed', p: {
+    adjust: { contrast: 35, saturation: 160, black: 10 },
+    layers: [
+      { mode: 'colorbleed', mask: 'full', opacity: 80, bleed: 45, scale: 100 },
+      { mode: 'screen', mask: 'layerbright', opacity: 85, bleed: 20, scale: 120 },
+    ],
+    finish: { vignette: 30, grain: 8 },
+  }},
   { id: 'window', name: 'Window Glow', p: {
     adjust: { contrast: 30, saturation: 120, black: 45, brightness: -20 },
-    expose: { mode: 'screen', mask: 'window', opacity: 100, winSize: 45, winX: 25, surround: 78, scale: 110 },
+    layers: [
+      { mode: 'screen', mask: 'window', opacity: 100, bleed: 0, winSize: 45, winX: 25, surround: 78, scale: 110 },
+    ],
     gmap: { palette: 'dusk', amount: 20, hard: false },
     finish: { vignette: 55, grain: 8 },
   }},
@@ -334,6 +399,23 @@ const PRESETS = [
     gmap: { palette: 'sodium', amount: 35, hard: false },
     finish: { vignette: 30, grain: 12 },
   }},
+  { id: 'stacked', name: 'Stacked Light', p: {
+    adjust: { contrast: 25, saturation: 140, black: 25, brightness: -10 },
+    layers: [
+      { mode: 'add', mask: 'layerbright', opacity: 75, bleed: 10, scale: 100 },
+      { mode: 'screen', mask: 'shadows', opacity: 90, bleed: 60, scale: 150 },
+    ],
+    finish: { vignette: 45, grain: 10 },
+  }},
+  { id: 'melt', name: 'Melt', p: {
+    adjust: { contrast: 30, saturation: 190 },
+    layers: [
+      { mode: 'softlight', mask: 'full', opacity: 100, bleed: 70, scale: 100 },
+      { mode: 'colorbleed', mask: 'highlights', opacity: 70, bleed: 85, scale: 130 },
+    ],
+    streak: { style: 'smear', dir: 'down', length: 25, coverage: 45, span: 100, threshold: 120, fibers: 30, mix: 70 },
+    finish: { vignette: 35, grain: 6 },
+  }},
   { id: 'sabattier', name: 'Sabattier', p: {
     adjust: { contrast: 40, saturation: 60 },
     solar: { threshold: 120, mix: 100 },
@@ -342,26 +424,26 @@ const PRESETS = [
   }},
   { id: 'ghost', name: 'Ghost Signal', p: {
     adjust: { contrast: 45, saturation: 180 },
-    expose: { mode: 'difference', mask: 'shadows', opacity: 70, scale: 130 },
+    layers: [{ mode: 'difference', mask: 'shadows', opacity: 70, bleed: 0, scale: 130 }],
     poster: { levels: 4, mix: 100 },
     glitch: { shift: 12, slices: 14, displace: 40 },
   }},
   { id: 'infrared', name: 'Infrared Drip', p: {
     adjust: { contrast: 35, saturation: 140 },
-    expose: { mode: 'lighten', mask: 'full', opacity: 55, scale: 100 },
+    layers: [{ mode: 'lighten', mask: 'full', opacity: 55, bleed: 15, scale: 100 }],
     streak: { style: 'trails', dir: 'down', length: 35, coverage: 55, span: 100, threshold: 150, fibers: 30, mix: 100 },
     gmap: { palette: 'infrared', amount: 75, hard: false },
     finish: { vignette: 40, grain: 6 },
   }},
 ];
 
-let state = withPreset(PRESETS[0].p);
+let state = defaults();
 let activePreset = PRESETS[0].id;
 
 /* ---------- images ---------- */
 let primary = null;   // HTMLCanvasElement or HTMLImageElement
-let second = null;
-let primaryId = 0, secondId = 0;
+let primaryId = 0;
+const layerImgs = new Map(); // layer uid -> canvas
 const WORK_MAX = 1400, EXPORT_MAX = 3200, THUMB_W = 180;
 
 function mkCanvas(w, h) { const c = document.createElement('canvas'); c.width = w; c.height = h; return c; }
@@ -454,11 +536,35 @@ function paintDusk(w, h) {
   return c;
 }
 
+function paintNeon(w, h) {
+  const c = mkCanvas(w, h), g = c.getContext('2d'), r = rng(77);
+  g.fillStyle = '#05030a'; g.fillRect(0, 0, w, h);
+  const cols = ['#ff2d55', '#ffb000', '#00d0ff', '#7a2cff', '#00ff9c', '#ff5edb'];
+  g.globalCompositeOperation = 'lighter';
+  for (let i = 0; i < 9; i++) {
+    const x = r() * w, y = r() * h, rad = h * (0.2 + r() * 0.45), col = cols[i % cols.length];
+    const gr = g.createRadialGradient(x, y, 0, x, y, rad);
+    gr.addColorStop(0, col); gr.addColorStop(1, 'rgba(0,0,0,0)');
+    g.globalAlpha = 0.55; g.fillStyle = gr; g.fillRect(0, 0, w, h);
+  }
+  for (let i = 0; i < 60; i++) {
+    g.globalAlpha = 0.15 + r() * 0.4; g.fillStyle = cols[(r() * cols.length) | 0];
+    g.beginPath(); g.arc(r() * w, r() * h, 6 + r() * 38, 0, Math.PI * 2); g.fill();
+  }
+  g.globalAlpha = 0.7; g.lineWidth = 3;
+  for (let i = 0; i < 7; i++) {
+    g.strokeStyle = cols[(r() * cols.length) | 0];
+    const x = r() * w; g.beginPath(); g.moveTo(x, 0); g.lineTo(x + (r() - 0.5) * w * 0.6, h); g.stroke();
+  }
+  g.globalAlpha = 1; g.globalCompositeOperation = 'source-over';
+  return c;
+}
+
 /* ---------- pixel caches ---------- */
 const cache = new Map();
 function cached(key, make) {
   if (cache.has(key)) return cache.get(key);
-  if (cache.size > 24) cache.clear();
+  if (cache.size > 80) cache.clear();
   const v = make(); cache.set(key, v); return v;
 }
 function getBase(W, H) {
@@ -473,18 +579,31 @@ function windowRect(W, H, p) {
   const x = (W - rw) * p.winX / 100, y = Math.max(H * 0.04, H * 0.45 - rh / 2);
   return { x, y, w: rw, h: rh };
 }
-function getSecond(W, H, rect, scale) {
-  const key = `s${secondId}:${W}x${H}:${scale}:${rect ? [rect.x, rect.y, rect.w, rect.h].map(Math.round).join(',') : 'full'}`;
+// A layer photo drawn to cover the frame (or the window), zoomed and panned.
+// Bleed softens it by shrinking and re-enlarging, so its colors spill past their edges.
+function getLayerData(L, W, H, rect) {
+  const img = layerImgs.get(L.uid);
+  const key = `L${L.uid}:${W}x${H}:${L.scale}:${L.panX}:${L.panY}:${L.bleed}:${rect ? [rect.x, rect.y, rect.w, rect.h].map(Math.round).join(',') : 'full'}`;
   return cached(key, () => {
     const c = mkCanvas(W, H), g = c.getContext('2d', { willReadFrequently: true });
     g.fillStyle = '#000'; g.fillRect(0, 0, W, H);
     const r = rect || { x: 0, y: 0, w: W, h: H };
-    const [iw, ih] = dims(second);
-    const s = Math.max(r.w / iw, r.h / ih) * scale, dw = iw * s, dh = ih * s;
+    const [iw, ih] = dims(img);
+    const s = Math.max(r.w / iw, r.h / ih) * L.scale / 100, dw = iw * s, dh = ih * s;
     g.save(); g.beginPath(); g.rect(r.x, r.y, r.w, r.h); g.clip();
     g.imageSmoothingQuality = 'high';
-    g.drawImage(second, r.x + (r.w - dw) / 2, r.y + (r.h - dh) / 2, dw, dh);
+    g.drawImage(img, r.x + (r.w - dw) * L.panX / 100, r.y + (r.h - dh) * L.panY / 100, dw, dh);
     g.restore();
+    if (L.bleed > 0) {
+      const f = 1 - Math.sqrt(L.bleed / 100) * 0.97;
+      const sw = Math.max(3, Math.round(W * f)), sh = Math.max(3, Math.round(H * f));
+      const small = mkCanvas(sw, sh), mid = mkCanvas(Math.min(W, sw * 3), Math.min(H, sh * 3));
+      const sg = small.getContext('2d'), mg = mid.getContext('2d');
+      sg.imageSmoothingQuality = mg.imageSmoothingQuality = g.imageSmoothingQuality = 'high';
+      sg.drawImage(c, 0, 0, sw, sh);
+      mg.drawImage(small, 0, 0, mid.width, mid.height);
+      g.clearRect(0, 0, W, H); g.drawImage(mid, 0, 0, W, H);
+    }
     return g.getImageData(0, 0, W, H);
   });
 }
@@ -516,34 +635,61 @@ function blendFn(mode) {
     case 'screen': return (a, b) => 1 - (1 - a) * (1 - b);
     case 'multiply': return (a, b) => a * b;
     case 'overlay': return (a, b) => a < .5 ? 2 * a * b : 1 - 2 * (1 - a) * (1 - b);
+    case 'hardlight': return (a, b) => b < .5 ? 2 * a * b : 1 - 2 * (1 - a) * (1 - b);
+    case 'softlight': return (a, b) => {
+      if (b <= .5) return a - (1 - 2 * b) * a * (1 - a);
+      const D = a <= .25 ? ((16 * a - 12) * a + 4) * a : Math.sqrt(a);
+      return a + (2 * b - 1) * (D - a);
+    };
     case 'lighten': return (a, b) => a > b ? a : b;
     case 'darken': return (a, b) => a < b ? a : b;
+    case 'add': return (a, b) => Math.min(1, a + b);
+    case 'dodge': return (a, b) => a === 0 ? 0 : b >= 1 ? 1 : Math.min(1, a / (1 - b));
     case 'difference': return (a, b) => Math.abs(a - b);
+    case 'exclusion': return (a, b) => a + b - 2 * a * b;
   }
   return (a, b) => b;
 }
-function fxExpose(d, p, W, H) {
+// W3C non-separable blend helpers: keep one image's brightness, take the other's color.
+const lum3 = (r, g, b) => .3 * r + .59 * g + .11 * b;
+function setLum(r, g, b, l, out) {
+  const dl = l - lum3(r, g, b); r += dl; g += dl; b += dl;
+  const L = lum3(r, g, b), n = Math.min(r, g, b), x = Math.max(r, g, b);
+  if (n < 0) { const k = L / (L - n); r = L + (r - L) * k; g = L + (g - L) * k; b = L + (b - L) * k; }
+  if (x > 1) { const k = (1 - L) / (x - L); r = L + (r - L) * k; g = L + (g - L) * k; b = L + (b - L) * k; }
+  out[0] = r; out[1] = g; out[2] = b;
+}
+
+function fxLayer(d, p, W, H) {
   const win = p.mask === 'window';
   const rect = win ? windowRect(W, H, p) : null;
-  const sd = getSecond(W, H, rect, p.scale / 100).data;
+  const sd = getLayerData(p, W, H, rect).data;
   const f = blendFn(p.mode), op = p.opacity / 100, sur = win ? p.surround / 100 : 0;
-  const fe = Math.max(2, W * 0.012);
+  const colorMode = p.mode === 'colorbleed' ? 1 : p.mode === 'luminosity' ? 2 : 0;
+  const fe = Math.max(2, W * 0.012), o = [0, 0, 0];
   for (let y = 0; y < H; y++) {
     const my = win ? smooth((y - rect.y) / fe) * smooth((rect.y + rect.h - y) / fe) : 1;
     for (let x = 0; x < W; x++) {
       const i = (y * W + x) * 4;
       const a0 = d[i] / 255, a1 = d[i + 1] / 255, a2 = d[i + 2] / 255;
+      const b0 = sd[i] / 255, b1 = sd[i + 1] / 255, b2 = sd[i + 2] / 255;
       let m = 1, inside = 1;
       if (win) { inside = my * smooth((x - rect.x) / fe) * smooth((rect.x + rect.w - x) / fe); m = inside; }
-      else if (p.mask !== 'full') {
+      else if (p.mask === 'shadows' || p.mask === 'highlights') {
         const l = .2126 * a0 + .7152 * a1 + .0722 * a2;
         m = smooth(p.mask === 'shadows' ? 1 - l : l);
+      } else if (p.mask === 'layerbright' || p.mask === 'layerdark') {
+        const l = .2126 * b0 + .7152 * b1 + .0722 * b2;
+        m = smooth(p.mask === 'layerdark' ? (1 - l) * 1.4 - 0.2 : l * 1.4 - 0.2);
       }
       m *= op;
-      const dark = 1 - sur * (1 - inside);
-      d[i]     = (a0 + (f(a0, sd[i] / 255) - a0) * m) * dark * 255;
-      d[i + 1] = (a1 + (f(a1, sd[i + 1] / 255) - a1) * m) * dark * 255;
-      d[i + 2] = (a2 + (f(a2, sd[i + 2] / 255) - a2) * m) * dark * 255;
+      if (colorMode === 1) setLum(b0, b1, b2, lum3(a0, a1, a2), o);
+      else if (colorMode === 2) setLum(a0, a1, a2, lum3(b0, b1, b2), o);
+      else { o[0] = f(a0, b0); o[1] = f(a1, b1); o[2] = f(a2, b2); }
+      const dark = (1 - sur * (1 - inside)) * 255;
+      d[i]     = (a0 + (o[0] - a0) * m) * dark;
+      d[i + 1] = (a1 + (o[1] - a1) * m) * dark;
+      d[i + 2] = (a2 + (o[2] - a2) * m) * dark;
     }
   }
 }
@@ -653,7 +799,7 @@ function fxFinish(d, p, W, H, seed) {
 function processImage(S, W, H) {
   const d = new Uint8ClampedArray(getBase(W, H).data);
   if (S.adjust.on) fxAdjust(d, S.adjust);
-  if (S.expose.on && second) fxExpose(d, S.expose, W, H);
+  if (S.expose.on) for (const L of S.layers) if (L.on && L.opacity > 0 && layerImgs.has(L.uid)) fxLayer(d, L, W, H);
   if (S.solar.on) fxSolar(d, S.solar);
   if (S.poster.on) fxPoster(d, S.poster);
   if (S.gmap.on) fxGmap(d, S.gmap);
@@ -691,15 +837,17 @@ function drawThumbs() {
     c.getContext('2d').putImageData(processImage(withPreset(pr.p), W, H), 0, 0);
   }
 }
-function drawBlendThumb() {
-  const c = document.querySelector('#blendThumb'); if (!c || !second) return;
-  c.width = 108; c.height = 80; const g = c.getContext('2d');
-  const [iw, ih] = dims(second), s = Math.max(108 / iw, 80 / ih);
-  g.drawImage(second, (108 - iw * s) / 2, (80 - ih * s) / 2, iw * s, ih * s);
+let thumbTimer = 0;
+function refreshThumbs() { clearTimeout(thumbTimer); thumbTimer = setTimeout(drawThumbs, 60); }
+function drawCover(c, img, w, h) {
+  c.width = w; c.height = h; const g = c.getContext('2d');
+  const [iw, ih] = dims(img), s = Math.max(w / iw, h / ih);
+  g.drawImage(img, (w - iw * s) / 2, (h - ih * s) / 2, iw * s, ih * s);
 }
 
 /* ---------- UI ---------- */
 function fmt(c, v) { return (c.k === 'brightness' || c.k === 'contrast' || c.k === 'hue') && v > 0 ? `+${v}${c.unit || ''}` : `${v}${c.unit || ''}`; }
+const esc = s => String(s).replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
 
 function buildPresets() {
   $('#presets').innerHTML = PRESETS.map(p =>
@@ -711,17 +859,20 @@ function buildPresets() {
   });
 }
 
+function ctlHTML(c, id, extra) {
+  if (c.type === 'select') return `<div class="ctl" ${extra}><label for="${id}">${c.label}</label><span></span><select id="${id}">${c.opts.map(([v, t]) => `<option value="${v}">${t}</option>`).join('')}</select></div>`;
+  if (c.type === 'check') return `<label class="check" ${extra}><input type="checkbox" id="${id}"> ${c.label}</label>`;
+  return `<div class="ctl" ${extra}><label for="${id}">${c.label}</label><output for="${id}"></output><input type="range" id="${id}" min="${c.min}" max="${c.max}" step="1"></div>`;
+}
+
 function buildStack() {
   const root = $('#stack');
   root.innerHTML = FX.map(fx => {
     const body = fx.c.map(c => {
-      const id = `c-${fx.key}-${c.k}`;
-      if (c.type === 'source') return `<div class="blend-src"><canvas id="blendThumb" aria-hidden="true"></canvas><label class="btn small" for="file2">Choose second photo</label></div>`;
-      if (c.type === 'select') return `<div class="ctl" data-c="${c.k}"><label for="${id}">${c.label}</label><span></span><select id="${id}">${c.opts.map(([v, t]) => `<option value="${v}">${t}</option>`).join('')}</select></div>`;
-      if (c.type === 'check') return `<label class="check" data-c="${c.k}"><input type="checkbox" id="${id}"> ${c.label}</label>`;
+      if (c.type === 'layers') return `<div class="layers" id="layerList"></div>`;
       if (c.type === 'palette') return `<div class="swatches" data-c="${c.k}" role="group" aria-label="Palette">${Object.entries(PALETTES).map(([k, p]) =>
         `<button type="button" class="swatch" data-pal="${k}"><i style="background:linear-gradient(90deg,${p.stops.join(',')})"></i>${p.name}</button>`).join('')}</div>`;
-      return `<div class="ctl" data-c="${c.k}"><label for="${id}">${c.label}</label><output for="${id}"></output><input type="range" id="${id}" min="${c.min}" max="${c.max}" step="1"></div>`;
+      return ctlHTML(c, `c-${fx.key}-${c.k}`, `data-c="${c.k}"`);
     }).join('');
     return `<div class="fx" data-fx="${fx.key}">
       <div class="fx-head">
@@ -734,6 +885,8 @@ function buildStack() {
 
   root.addEventListener('input', e => {
     const t = e.target, fxEl = t.closest('.fx'); if (!fxEl) return;
+    const lay = t.closest('.layer');
+    if (lay) { onLayerInput(t, lay); return; }
     const key = fxEl.dataset.fx;
     if (t.id === `on-${key}`) state[key].on = t.checked;
     else {
@@ -745,11 +898,93 @@ function buildStack() {
     markCustom(); syncVisibility(); schedule();
   });
   root.addEventListener('click', e => {
+    const act = e.target.closest('[data-act]');
+    if (act) { onLayerAction(act.dataset.act, +act.closest('.layer').dataset.uid); return; }
     const sw = e.target.closest('.swatch'); if (!sw) return;
     state.gmap.palette = sw.dataset.pal; state.gmap.on = true;
     markCustom(); syncUI(); schedule();
   });
 }
+
+/* ---------- layers panel ---------- */
+let baseName = 'Sample city';
+const openLayers = new Set();
+const blendLabel = m => BLENDS.find(b => b[0] === m)[1].replace(/ \(.*\)$/, '');
+
+function renderLayers() {
+  const list = $('#layerList'); if (!list) return;
+  const n = state.layers.length;
+  const cards = state.layers.map((L, i) => {
+    const open = openLayers.has(L.uid);
+    const body = LAYER_C.map(c => ctlHTML(c, `l${L.uid}-${c.k}`, `data-lc="${c.k}"`)).join('');
+    return `<div class="layer${L.on ? '' : ' muted'}" data-uid="${L.uid}">
+      <div class="layer-head">
+        <label class="switch"><input type="checkbox" data-lon ${L.on ? 'checked' : ''} aria-label="Show layer ${i + 1}"><span></span></label>
+        <canvas aria-hidden="true"></canvas>
+        <button class="layer-name" type="button" data-act="toggle" aria-expanded="${open}"><b>Layer ${i + 1}</b><small>${esc(L.name)} · <span data-mode>${blendLabel(L.mode)}</span></small></button>
+        <button class="icon-btn" type="button" data-act="up" aria-label="Move layer ${i + 1} up" ${i === 0 ? 'disabled' : ''}>↑</button>
+        <button class="icon-btn" type="button" data-act="down" aria-label="Move layer ${i + 1} down" ${i === n - 1 ? 'disabled' : ''}>↓</button>
+        <button class="icon-btn" type="button" data-act="remove" aria-label="Remove layer ${i + 1}">✕</button>
+      </div>
+      <div class="layer-body"${open ? '' : ' hidden'}>${body}
+        <div class="layer-add"><button class="btn small" type="button" data-act="base">Swap with base photo</button></div>
+      </div>
+    </div>`;
+  }).join('');
+  list.innerHTML = `<div class="layer-base"><canvas id="baseThumb" aria-hidden="true"></canvas><span>Base: ${esc(baseName)}. Layers blend onto it in order.</span><label class="btn small" for="file1">Replace</label></div>
+    ${cards}
+    <div class="layer-add"><label class="btn small" for="file2">+ Add photos</label><span class="mono">${n} of ${MAX_LAYERS} layers</span></div>`;
+  if (primary) drawCover($('#baseThumb'), primary, 88, 66);
+  for (const L of state.layers) {
+    const el = list.querySelector(`[data-uid="${L.uid}"]`);
+    drawCover(el.querySelector('.layer-head canvas'), layerImgs.get(L.uid), 88, 66);
+    for (const c of LAYER_C) {
+      const input = el.querySelector(`#l${L.uid}-${c.k}`);
+      input.value = L[c.k];
+      if (!c.type) input.previousElementSibling.textContent = fmt(c, L[c.k]);
+    }
+    syncLayerVisibility(el, L);
+  }
+}
+function syncLayerVisibility(el, L) {
+  for (const c of LAYER_C) if (c.when) el.querySelector(`[data-lc="${c.k}"]`).hidden = !c.when(L);
+}
+function onLayerInput(t, lay) {
+  const L = state.layers.find(l => l.uid === +lay.dataset.uid); if (!L) return;
+  if (t.hasAttribute('data-lon')) { L.on = t.checked; lay.classList.toggle('muted', !L.on); }
+  else {
+    const ctl = t.closest('[data-lc]'), c = LAYER_C.find(c => c.k === ctl.dataset.lc);
+    L[c.k] = t.type === 'range' ? +t.value : t.value;
+    if (t.type === 'range') ctl.querySelector('output').textContent = fmt(c, +t.value);
+    if (c.k === 'mode') lay.querySelector('[data-mode]').textContent = blendLabel(L.mode);
+    syncLayerVisibility(lay, L);
+  }
+  markCustom(); schedule();
+}
+function onLayerAction(act, uid) {
+  const i = state.layers.findIndex(l => l.uid === uid); if (i < 0) return;
+  const L = state.layers[i];
+  if (act === 'toggle') {
+    openLayers.has(uid) ? openLayers.delete(uid) : openLayers.add(uid);
+    const el = document.querySelector(`.layer[data-uid="${uid}"]`);
+    el.querySelector('.layer-body').hidden = !openLayers.has(uid);
+    el.querySelector('.layer-name').setAttribute('aria-expanded', openLayers.has(uid));
+    return;
+  }
+  if (act === 'up' && i > 0) [state.layers[i - 1], state.layers[i]] = [state.layers[i], state.layers[i - 1]];
+  if (act === 'down' && i < state.layers.length - 1) [state.layers[i + 1], state.layers[i]] = [state.layers[i], state.layers[i + 1]];
+  if (act === 'remove') { state.layers.splice(i, 1); layerImgs.delete(uid); openLayers.delete(uid); toast(`Removed ${L.name}.`); }
+  if (act === 'base') {
+    // new uid so cached pixels of the old image are never reused
+    const img = layerImgs.get(uid), oldBase = primary, oldName = baseName;
+    layerImgs.delete(uid); openLayers.delete(uid);
+    primary = img; primaryId++; baseName = L.name;
+    L.uid = ++layerUid; L.name = oldName; L.sample = false; layerImgs.set(L.uid, oldBase); openLayers.add(L.uid);
+    toast(`${baseName} is now the base photo.`);
+  }
+  markCustom(); renderLayers(); refreshThumbs(); schedule();
+}
+
 function markCustom() {
   if (!activePreset) return;
   activePreset = null;
@@ -768,7 +1003,7 @@ function syncUI() {
     const s = state[fx.key], el = document.querySelector(`[data-fx="${fx.key}"]`);
     el.querySelector(`#on-${fx.key}`).checked = s.on;
     for (const c of fx.c) {
-      if (c.type === 'source') continue;
+      if (c.type === 'layers') continue;
       if (c.type === 'palette') { el.querySelectorAll('.swatch').forEach(b => b.setAttribute('aria-pressed', b.dataset.pal === s[c.k])); continue; }
       const input = el.querySelector(`#c-${fx.key}-${c.k}`);
       if (c.type === 'check') input.checked = s[c.k];
@@ -777,17 +1012,17 @@ function syncUI() {
   }
   document.querySelectorAll('.preset').forEach(b => b.setAttribute('aria-pressed', b.dataset.preset === activePreset));
   syncVisibility();
-  drawBlendThumb();
+  renderLayers();
 }
 
 /* ---------- surprise me ---------- */
 function surprise() {
   const R = Math.random, pick = a => a[(R() * a.length) | 0];
-  const s = defaults(); s.seed = (R() * 1e6) | 0;
+  const s = defaults(state.layers); s.seed = (R() * 1e6) | 0;
   const randomize = key => {
     const fx = FX.find(f => f.key === key); s[key].on = true;
     for (const c of fx.c) {
-      if (c.type === 'source') continue;
+      if (c.type === 'layers') continue;
       if (c.type === 'select') s[key][c.k] = pick(c.opts)[0];
       else if (c.type === 'check') s[key][c.k] = R() < 0.5;
       else if (c.type === 'palette') s[key][c.k] = pick(Object.keys(PALETTES));
@@ -795,12 +1030,19 @@ function surprise() {
     }
   };
   Object.assign(s.adjust, { on: true, contrast: 15 + (R() * 55 | 0), saturation: 70 + (R() * 170 | 0), brightness: -20 + (R() * 25 | 0), hue: R() < 0.3 ? (R() * 360 - 180 | 0) : 0, black: R() * 45 | 0 });
-  const pool = ['expose', 'solar', 'poster', 'gmap', 'streak', 'glitch'].sort(() => R() - 0.5);
-  pool.slice(0, 2 + (R() < 0.5 ? 1 : 0)).forEach(randomize);
+  const pool = ['solar', 'poster', 'gmap', 'streak', 'glitch'].sort(() => R() - 0.5);
+  pool.slice(0, 1 + (R() < 0.5 ? 1 : 0)).forEach(randomize);
+  if (s.layers.length && R() < 0.8) {
+    s.expose.on = true;
+    for (const L of s.layers) Object.assign(L, {
+      on: R() < 0.85, mode: pick(BLENDS)[0],
+      mask: R() < 0.4 ? 'full' : pick(['layerbright', 'layerdark', 'shadows', 'highlights']),
+      opacity: 40 + (R() * 60 | 0), bleed: R() * 80 | 0, scale: 100 + (R() * 80 | 0), panX: R() * 100 | 0, panY: R() * 100 | 0,
+    });
+  }
   if (s.solar.on) s.solar.threshold = 90 + (R() * 110 | 0);
   if (s.poster.on) s.poster.levels = 2 + (R() * 4 | 0);
   if (s.gmap.on) s.gmap.amount = 30 + (R() * 70 | 0);
-  if (s.expose.on) s.expose.opacity = 50 + (R() * 50 | 0);
   if (s.glitch.on) s.glitch.shift = R() * 20 | 0;
   Object.assign(s.finish, { on: true, vignette: R() * 60 | 0, grain: R() * 18 | 0 });
   state = s; activePreset = null; syncUI(); schedule();
@@ -811,28 +1053,59 @@ function toast(msg) {
   const t = $('#toast'); t.textContent = msg; t.hidden = false;
   clearTimeout(toast.t); toast.t = setTimeout(() => { t.hidden = true; }, 3200);
 }
-function loadFile(file, which) {
-  if (!file) return;
-  if (!file.type.startsWith('image/') && !/\.(jpe?g|png|webp|gif|bmp|avif)$/i.test(file.name)) { toast('That file isn’t an image. Try a JPG or PNG.'); return; }
-  const url = URL.createObjectURL(file), img = new Image();
-  img.onload = () => {
-    // keep a capped copy so huge phone photos stay fast
-    const [w, h] = fitSize(img, EXPORT_MAX), c = mkCanvas(w, h);
-    c.getContext('2d').drawImage(img, 0, 0, w, h); URL.revokeObjectURL(url);
-    if (which === 2) { second = c; secondId++; state.expose.on = true; markCustom(); syncUI(); toast('Second photo loaded into Double exposure.'); }
-    else { primary = c; primaryId++; drawThumbs(); toast('Photo opened. Pick a recipe or build your own stack.'); }
-    schedule();
-  };
-  img.onerror = () => { URL.revokeObjectURL(url); toast('This browser can’t read that image. Convert it to JPG or PNG and try again.'); };
-  img.src = url;
+function readImage(file) {
+  return new Promise((resolve, reject) => {
+    if (!file.type.startsWith('image/') && !/\.(jpe?g|png|webp|gif|bmp|avif)$/i.test(file.name)) { reject(new Error('type')); return; }
+    const url = URL.createObjectURL(file), img = new Image();
+    img.onload = () => {
+      // keep a capped copy so huge phone photos stay fast
+      const [w, h] = fitSize(img, EXPORT_MAX), c = mkCanvas(w, h);
+      c.getContext('2d').drawImage(img, 0, 0, w, h); URL.revokeObjectURL(url); resolve(c);
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('decode')); };
+    img.src = url;
+  });
 }
-$('#file1').addEventListener('change', e => { loadFile(e.target.files[0], 1); e.target.value = ''; });
-$('#file2').addEventListener('change', e => { loadFile(e.target.files[0], 2); e.target.value = ''; });
+const cleanName = f => f.name.replace(/\.[^.]+$/, '') || 'Photo';
+async function openBase(file) {
+  try {
+    primary = await readImage(file); primaryId++; baseName = cleanName(file);
+    renderLayers(); refreshThumbs(); schedule();
+    toast('Photo opened. Add layers or pick a recipe.');
+  } catch { toast('This browser can’t read that image. Convert it to JPG or PNG and try again.'); }
+}
+async function addLayers(files) {
+  let added = 0, failed = 0;
+  // the first photos you add replace the built-in sample layers
+  const samples = state.layers.filter(L => L.sample);
+  for (const file of files) {
+    if (state.layers.length - samples.length >= MAX_LAYERS) { toast(`You can stack up to ${MAX_LAYERS} layers. Remove one to add another.`); break; }
+    try {
+      const img = await readImage(file), L = newLayer(cleanName(file));
+      if (!added && samples.length) {
+        state.layers = state.layers.filter(l => !l.sample);
+        samples.forEach(l => { layerImgs.delete(l.uid); openLayers.delete(l.uid); });
+        samples.length = 0;
+      }
+      layerImgs.set(L.uid, img); state.layers.push(L); openLayers.add(L.uid); added++;
+    } catch { failed++; }
+  }
+  if (!added) { if (failed) toast('Those files couldn’t be read. Use JPG or PNG photos.'); return; }
+  state.expose.on = true; markCustom(); syncUI(); refreshThumbs(); schedule();
+  toast(`Added ${added} layer${added > 1 ? 's' : ''}${failed ? `, ${failed} couldn’t be read` : ''}. Try Bleed and the Blend modes.`);
+}
+$('#file1').addEventListener('change', e => { if (e.target.files[0]) openBase(e.target.files[0]); e.target.value = ''; });
+$('#file2').addEventListener('change', e => { addLayers([...e.target.files]); e.target.value = ''; });
 
 const stage = $('#stage');
 ['dragenter', 'dragover'].forEach(ev => stage.addEventListener(ev, e => { e.preventDefault(); $('#drop').hidden = false; }));
 ['dragleave', 'drop'].forEach(ev => stage.addEventListener(ev, e => { e.preventDefault(); if (ev === 'dragleave' && stage.contains(e.relatedTarget)) return; $('#drop').hidden = true; }));
-stage.addEventListener('drop', e => loadFile(e.dataTransfer.files[0], 1));
+// one photo replaces the base; several make the first the base and stack the rest
+stage.addEventListener('drop', async e => {
+  const files = [...e.dataTransfer.files]; if (!files.length) return;
+  await openBase(files[0]);
+  if (files.length > 1) addLayers(files.slice(1));
+});
 
 /* compare: hold on the button or the image */
 function setOriginal(on) { showingOriginal = on; $('#compTag').hidden = !on; schedule(); }
@@ -882,7 +1155,12 @@ $('#surprise').addEventListener('click', surprise);
 buildPresets();
 buildStack();
 primary = paintCity(1400, 1000); primaryId++;
-second = paintDusk(1200, 900); secondId++;
+for (const [name, img] of [['Sample dusk', paintDusk(1200, 900)], ['Sample neon', paintNeon(1200, 900)]]) {
+  const L = newLayer(name); L.sample = true; layerImgs.set(L.uid, img); state.layers.push(L);
+}
+openLayers.add(state.layers[0].uid);
+activePreset = 'bleed';
+state = withPreset(PRESETS.find(p => p.id === activePreset).p);
 syncUI();
 draw();
 drawThumbs();
