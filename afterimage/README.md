@@ -1,0 +1,27 @@
+# Afterimage Studio
+
+A browser photo editor for turning your own photos into pop-art, double-exposure and pixel-streak artwork.
+
+Open `index.html` in any modern browser. There's nothing to install, and your photos stay on your device.
+
+## Effect stack (runs top to bottom)
+
+| Effect | What it does |
+| --- | --- |
+| Tone | Brightness, contrast, saturation, hue shift, crush blacks |
+| Double exposure | Blends in a second photo (screen, lighten, overlay, multiply, difference, darken) across the whole frame, into shadows or highlights, or through a glowing window |
+| Solarize | Flips tones above a threshold (the Sabattier darkroom effect) |
+| Posterize | Snaps each color channel into flat bands |
+| Color map | Repaints shadows through highlights with a palette (Pop Eye, Neon Dusk, Sodium, Cyanotype, Acid, Infrared) |
+| Pixel streak | Smears pixels into long lines or drips of light, downward, upward or sideways |
+| Glitch | RGB channel split and displaced slices |
+| Finish | Vignette and film grain |
+
+## Recipes
+
+- **Pop Eye**: saturated, posterized primaries (red, yellow, blue, black, white)
+- **Window Glow**: a dark scene with a second photo glowing through a window
+- **Light Rain**: vertical pixel streaks over a warm, dark city
+- **Sabattier**, **Ghost Signal**, **Infrared Drip**: more starting points
+
+**Surprise me** builds a random stack. Hold the image (or press **Hold to see original**) to compare with the original photo. **Save image** exports a PNG up to 3200 px on the long side.
