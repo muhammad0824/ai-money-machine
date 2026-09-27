@@ -855,15 +855,26 @@ $('#save').addEventListener('click', () => {
     c.toBlob(blob => {
       btn.textContent = 'Save image'; btn.disabled = false;
       if (!blob) { toast('Couldn’t render the image. Try a smaller photo.'); return; }
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a'); a.href = url; a.download = `afterimage-${Date.now()}.png`;
-      document.body.appendChild(a); a.click(); a.remove();
-      $('#saveImg').src = url;
-      $('#saveNote').textContent = `${W} × ${H} px PNG. If the download didn’t start, right-click the image (or long-press on a phone) and choose Save Image.`;
-      $('#saveDlg').showModal();
+      const filename = `afterimage-${Date.now()}.png`;
+      if (downloads) {
+        downloads.save({ filename, data: blob })
+          .then(() => toast(`Saved ${W} × ${H} px PNG.`))
+          .catch(err => { if (err && err.code === 'declined') toast('Save cancelled.'); else showSaved(blob, W, H, filename); });
+      } else showSaved(blob, W, H, filename);
     }, 'image/png');
   }, 30);
 });
+function showSaved(blob, W, H, filename) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); a.remove();
+  $('#saveImg').src = url;
+  $('#saveNote').textContent = `${W} × ${H} px PNG. If the download didn’t start, right-click the image (or long-press on a phone) and choose Save Image.`;
+  $('#saveDlg').showModal();
+}
+// When hosted as a Claude artifact, saving goes through the viewer's download prompt.
+let downloads = null;
+if (window.claude && window.claude.use) window.claude.use('downloads').then(d => { downloads = d; }).catch(() => {});
 $('#closeDlg').addEventListener('click', () => $('#saveDlg').close());
 $('#surprise').addEventListener('click', surprise);
 
