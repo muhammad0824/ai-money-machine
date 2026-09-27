@@ -26,3 +26,16 @@ Open `index.html` in any modern browser. Use **Open photo** for the base and **A
 - **Sabattier**, **Ghost Signal**, **Infrared Drip**: more starting points
 
 **Surprise me** builds a random stack. Hold the image (or press **Hold to see original**) to compare with the original photo. **Save image** exports a PNG up to 3200 px on the long side.
+
+## Install it as an app on your phone
+
+The folder is a Progressive Web App: host it at any https address and your phone can add it to the home screen. It then opens full screen, with its own icon, and works offline.
+
+The free way is GitHub Pages:
+
+1. Merge this branch into `main` (or pick this branch in step 2).
+2. On GitHub, go to **Settings → Pages**, set **Source** to *Deploy from a branch*, choose the branch and `/ (root)`, and save.
+3. After a minute the app is live at `https://muhammad0824.github.io/ai-money-machine/afterimage/`.
+4. On iPhone, open that address in Safari, tap **Share → Add to Home Screen**. On Android, open it in Chrome and tap **Install app**.
+
+Only the app's code is public. Photos you edit are processed on your device and never uploaded.

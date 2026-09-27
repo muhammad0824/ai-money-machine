@@ -4,6 +4,16 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Afterimage Studio</title>
+<!-- app-install:start -->
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#0d0c11">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Afterimage">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" href="icon-192.png">
+<!-- app-install:end -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
@@ -88,10 +98,25 @@
     box-shadow: 0 20px 60px rgba(0,0,0,.6);
     touch-action: none; cursor: crosshair;
   }
-  @media (max-width: 899px) { #view { max-height: 70vh; } }
   .stage-foot {
     display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;
     padding-top: 12px;
+  }
+  .only-narrow { display: none; }
+  /* Phones and narrow windows: pin the picture to the top so edits stay in view while the controls scroll. */
+  @media (max-width: 899px) {
+    .stage {
+      position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5;
+      padding-block: 8px; padding-inline: 16px;
+      background: var(--ink); border-bottom: 1px solid var(--line);
+      box-shadow: 0 10px 24px rgba(0,0,0,.55);
+    }
+    #view { max-height: 42vh; max-height: 42dvh; box-shadow: none; }
+    .stage.big #view { max-height: 72vh; max-height: 72dvh; }
+    .stage-foot { padding-top: 6px; }
+    #meta { display: none; }
+    .only-narrow { display: inline-flex; }
+    .comparing-tag { top: 14px; left: 22px; }
   }
   .mono { font-family: var(--mono); font-size: 11px; color: var(--mute); font-variant-numeric: tabular-nums; }
   .drop {
@@ -229,6 +254,7 @@
     <div class="canvas-wrap"><canvas id="view" aria-label="Edited photo"></canvas></div>
     <div class="stage-foot">
       <span id="meta" class="mono"></span>
+      <button id="bigger" class="btn ghost only-narrow" type="button" aria-pressed="false">Bigger preview</button>
       <button id="compare" class="btn ghost" type="button">Hold to see original</button>
     </div>
     <div class="drop" id="drop" hidden>Drop photos: the first becomes the base, the rest become layers</div>
@@ -1150,6 +1176,15 @@ let downloads = null;
 if (window.claude && window.claude.use) window.claude.use('downloads').then(d => { downloads = d; }).catch(() => {});
 $('#closeDlg').addEventListener('click', () => $('#saveDlg').close());
 $('#surprise').addEventListener('click', surprise);
+$('#bigger').addEventListener('click', e => {
+  const big = $('#stage').classList.toggle('big');
+  e.currentTarget.setAttribute('aria-pressed', big);
+  e.currentTarget.textContent = big ? 'Smaller preview' : 'Bigger preview';
+});
+// Installed as a home-screen app: cache the page so it opens offline.
+if ('serviceWorker' in navigator && location.protocol === 'https:') {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
 
 /* ---------- boot ---------- */
 buildPresets();
