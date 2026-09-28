@@ -1,5 +1,5 @@
 // Offline cache for the installed app. Network first so updates show up; cache when offline.
-const CACHE = 'afterimage-v1';
+const CACHE = 'afterimage-v2';
 const FILES = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', e => {

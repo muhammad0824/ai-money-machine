@@ -6,7 +6,7 @@
 <title>Afterimage Studio</title>
 <!-- app-install:start -->
 <link rel="manifest" href="manifest.webmanifest">
-<meta name="theme-color" content="#0d0c11">
+<meta name="theme-color" content="#09090b">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -16,260 +16,354 @@
 <!-- app-install:end -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap">
 <style>
-  /* Darkroom palette: a photo editor stays dark on purpose so colors are judged against black. */
+  /* A photo editor stays dark on purpose: colors are judged against near-black, never against a bright page. */
   :root {
     color-scheme: dark;
-    --ink: #0d0c11;
-    --panel: #15131a;
-    --raise: #1e1b25;
-    --line: #2c2834;
-    --text: #efe9df;
-    --mute: #958d9f;
-    --safelight: #f2b24a;
-    --safelight-ink: #1a1206;
-    --bar: 60px;
-    --display: "Syne", "Arial Black", system-ui, sans-serif;
-    --body: "Instrument Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
-    --mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+    --bg: #09090b;
+    --surface: #111114;
+    --surface-2: #16161a;
+    --surface-3: #1e1e24;
+    --line: rgba(255, 255, 255, .07);
+    --line-2: rgba(255, 255, 255, .13);
+    --text: #f3f1ec;
+    --soft: #c8c6ce;
+    --mute: #85848e;
+    --accent: #ffb547;
+    --accent-ink: #1c1203;
+    --live: #3ddc97;
+    --chroma: linear-gradient(90deg, #ff3b30, #ffcc00 48%, #3a5bff);
+    --bar: 56px;
+    --ui: "Geist", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --mono: "Geist Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
   }
   * { box-sizing: border-box; }
   [hidden] { display: none !important; }
   html, body { height: 100%; }
   body {
     margin: 0;
-    background: var(--ink);
+    background: var(--bg);
     color: var(--text);
-    font: 14px/1.45 var(--body);
+    font: 14px/1.45 var(--ui);
     -webkit-font-smoothing: antialiased;
   }
   button, select, input { font: inherit; color: inherit; }
-  :focus-visible { outline: 2px solid var(--safelight); outline-offset: 2px; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  input[type=file] { display: none; }
 
+  /* ---- top bar ---- */
   .bar {
     min-height: var(--bar);
     display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
     gap: 10px 16px;
     padding-block: 10px; padding-inline: 16px;
     border-bottom: 1px solid var(--line);
-    background: var(--panel);
+    background: rgba(9, 9, 11, .86);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    position: relative; z-index: 6;
   }
-  .brand { display: flex; align-items: baseline; gap: 10px; }
-  .mark {
-    font-family: var(--display); font-weight: 800; font-size: 22px; letter-spacing: -0.02em;
-    background: linear-gradient(90deg, #e3241b 0%, #f6d31a 38%, #efe9df 60%, #3a4bff 100%);
-    -webkit-background-clip: text; background-clip: text; color: transparent;
+  .brand { display: flex; align-items: center; gap: 10px; }
+  .logo {
+    width: 22px; height: 22px; border-radius: 50%; flex: none;
+    background: radial-gradient(circle at 50% 50%, #09090b 0 28%, transparent 30%),
+                conic-gradient(from 200deg, #ff3b30, #ffcc00, #3a5bff, #ff3b30);
+    box-shadow: 0 0 18px rgba(255, 140, 60, .35);
   }
-  .sub { font-family: var(--mono); font-size: 11px; color: var(--mute); text-transform: uppercase; letter-spacing: .08em; }
-  .actions { display: flex; flex-wrap: wrap; gap: 8px; }
+  .mark { font-weight: 650; font-size: 17px; letter-spacing: -0.03em; }
+  .mark small { font: 500 11px var(--mono); color: var(--mute); letter-spacing: 0; margin-left: 8px; }
+  .actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .pair { display: inline-flex; border: 1px solid var(--line-2); border-radius: 9px; overflow: hidden; }
+  .pair .btn { border: 0; border-radius: 0; }
+  .pair .btn + .btn { border-left: 1px solid var(--line-2); }
 
   .btn {
-    display: inline-flex; align-items: center; gap: 6px;
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
     height: 34px; padding: 0 14px;
-    border: 1px solid var(--line); border-radius: 6px;
-    background: var(--raise); color: var(--text);
-    font-weight: 500; font-size: 13px; cursor: pointer; user-select: none;
-    transition: border-color .15s, background .15s;
+    border: 1px solid var(--line-2); border-radius: 9px;
+    background: var(--surface-3); color: var(--text);
+    font-weight: 500; font-size: 13px; cursor: pointer; user-select: none; white-space: nowrap;
+    transition: background .15s, border-color .15s, transform .1s;
   }
-  .btn:hover { border-color: #4a4454; }
-  .btn.primary { background: var(--safelight); color: var(--safelight-ink); border-color: var(--safelight); font-weight: 600; }
-  .btn.primary:hover { background: #ffc566; }
-  .btn.ghost { background: transparent; height: 28px; padding: 0 10px; font-size: 12px; }
-  .btn.small { height: 28px; padding: 0 10px; font-size: 12px; }
-  input[type=file] { display: none; }
+  .btn:hover { background: #26262d; }
+  .btn:active { transform: translateY(1px); }
+  .btn:disabled { opacity: .5; cursor: progress; }
+  .btn.primary { background: var(--text); color: #0b0b0d; border-color: var(--text); font-weight: 600; }
+  .btn.primary:hover { background: #ffffff; }
+  .btn.chroma {
+    border: 1px solid transparent;
+    background: linear-gradient(var(--surface-3), var(--surface-3)) padding-box, var(--chroma) border-box;
+  }
+  .btn.chroma:hover { background: linear-gradient(#26262d, #26262d) padding-box, var(--chroma) border-box; }
+  .btn.small { height: 30px; padding: 0 11px; font-size: 12px; border-radius: 8px; }
+  .btn svg { width: 15px; height: 15px; }
 
-  .app { display: grid; grid-template-columns: 1fr; }
+  /* ---- layout ---- */
+  .app { display: grid; grid-template-columns: minmax(0, 1fr); }
+  .panel, .stage { min-width: 0; }
   @media (min-width: 900px) {
-    .app { grid-template-columns: minmax(0, 1fr) 372px; height: calc(100% - var(--bar)); }
+    .app { grid-template-columns: minmax(0, 1fr) 392px; height: calc(100% - var(--bar)); }
     .panel { overflow-y: auto; border-left: 1px solid var(--line); }
   }
 
+  /* ---- stage ---- */
   .stage {
-    position: relative;
-    display: flex; flex-direction: column; min-height: 0;
-    padding: 16px;
-    background:
-      radial-gradient(circle at 50% 40%, #1a1720 0%, var(--ink) 70%);
+    position: relative; min-height: 0;
+    display: flex; flex-direction: column;
+    padding: 20px;
+    background-color: var(--bg);
+    background-image: radial-gradient(rgba(255, 255, 255, .055) 1px, transparent 1px);
+    background-size: 22px 22px;
   }
-  .canvas-wrap { flex: 1; min-height: 0; display: grid; place-items: center; }
+  .canvas-wrap { flex: 1; min-height: 0; display: grid; place-items: center; padding-bottom: 64px; }
   #view {
     display: block; max-width: 100%; max-height: 100%;
-    box-shadow: 0 20px 60px rgba(0,0,0,.6);
+    border-radius: 6px;
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, .06), 0 30px 80px -20px rgba(0, 0, 0, .85);
     touch-action: none; cursor: crosshair;
   }
-  .stage-foot {
-    display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;
-    padding-top: 12px;
+  .dock {
+    position: absolute; left: 50%; bottom: 20px; transform: translateX(-50%);
+    display: flex; align-items: center; gap: 2px; padding: 4px;
+    border-radius: 999px; border: 1px solid var(--line-2);
+    background: rgba(22, 22, 27, .74);
+    backdrop-filter: blur(16px) saturate(140%);
+    -webkit-backdrop-filter: blur(16px) saturate(140%);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, .5);
+    max-width: calc(100% - 32px);
   }
+  .dock-btn {
+    height: 30px; padding: 0 13px; border: 0; border-radius: 999px; background: transparent;
+    font-size: 12px; font-weight: 500; color: var(--soft); cursor: pointer; white-space: nowrap;
+  }
+  .dock-btn:hover { background: rgba(255, 255, 255, .08); color: var(--text); }
+  .status { display: inline-flex; align-items: center; gap: 7px; padding: 0 12px 0 10px; font: 11px var(--mono); color: var(--mute); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .status i { width: 7px; height: 7px; border-radius: 50%; background: var(--live); box-shadow: 0 0 8px var(--live); flex: none; }
+  .status.busy i { background: var(--accent); box-shadow: 0 0 10px var(--accent); animation: pulse 0.9s ease-in-out infinite; }
+  @keyframes pulse { 50% { opacity: .35; } }
+  .dock .sep { width: 1px; height: 18px; background: var(--line-2); margin: 0 2px; }
   .only-narrow { display: none; }
+
+  .drop {
+    position: absolute; inset: 16px; border: 1.5px dashed var(--accent); border-radius: 16px;
+    display: grid; place-items: center; text-align: center; padding: 20px;
+    background: rgba(9, 9, 11, .86); font-size: 17px; font-weight: 600; color: var(--accent); pointer-events: none;
+  }
+  .comparing-tag {
+    position: absolute; top: 28px; left: 28px;
+    font: 500 11px var(--mono); letter-spacing: .06em; text-transform: uppercase;
+    background: var(--text); color: var(--bg); padding: 4px 10px; border-radius: 999px;
+  }
+
   /* Phones and narrow windows: pin the picture to the top so edits stay in view while the controls scroll. */
   @media (max-width: 899px) {
     .stage {
       position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5;
-      padding-block: 8px; padding-inline: 16px;
-      background: var(--ink); border-bottom: 1px solid var(--line);
-      box-shadow: 0 10px 24px rgba(0,0,0,.55);
+      padding-block: 10px; padding-inline: 16px;
+      border-bottom: 1px solid var(--line);
+      box-shadow: 0 14px 30px rgba(0, 0, 0, .6);
     }
-    #view { max-height: 42vh; max-height: 42dvh; box-shadow: none; }
-    .stage.big #view { max-height: 72vh; max-height: 72dvh; }
-    .stage-foot { padding-top: 6px; }
+    .canvas-wrap { padding-bottom: 0; }
+    #view { max-height: 40vh; max-height: 40dvh; }
+    .stage.big #view { max-height: 70vh; max-height: 70dvh; }
+    .dock { position: static; transform: none; margin: 10px auto 0; }
     #meta { display: none; }
-    .only-narrow { display: inline-flex; }
-    .comparing-tag { top: 14px; left: 22px; }
-  }
-  .mono { font-family: var(--mono); font-size: 11px; color: var(--mute); font-variant-numeric: tabular-nums; }
-  .drop {
-    position: absolute; inset: 10px; border: 2px dashed var(--safelight); border-radius: 10px;
-    display: grid; place-items: center; background: rgba(13,12,17,.8);
-    font-family: var(--display); font-size: 24px; color: var(--safelight); pointer-events: none;
-  }
-  .comparing-tag {
-    position: absolute; top: 24px; left: 24px;
-    font-family: var(--mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase;
-    background: var(--text); color: var(--ink); padding: 3px 8px; border-radius: 3px;
+    .status { padding: 0 6px 0 10px; }
+    .only-narrow { display: inline-flex; align-items: center; }
+    .comparing-tag { top: 18px; left: 24px; }
   }
 
-  .panel { background: var(--panel); padding-block: 16px 40px; padding-inline: 16px; display: flex; flex-direction: column; gap: 22px; }
-  .eyebrow {
-    margin: 0 0 10px; display: flex; justify-content: space-between; align-items: baseline;
-    font: 600 11px/1 var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--mute);
-  }
-  .eyebrow span { letter-spacing: .02em; text-transform: none; font-weight: 400; }
+  /* ---- side panel ---- */
+  .panel { background: var(--surface); padding-block: 18px 48px; padding-inline: 16px; display: flex; flex-direction: column; gap: 22px; }
+  .panel > section { min-width: 0; }
+  .sec-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-bottom: 10px; }
+  .sec-head h2 { margin: 0; font-size: 13px; font-weight: 600; letter-spacing: -0.01em; }
+  .sec-head span { font-size: 12px; color: var(--mute); }
 
-  .presets { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .presets {
+    display: grid; grid-auto-flow: column; grid-auto-columns: 116px; gap: 10px;
+    overflow-x: auto; scroll-snap-type: x proximity; padding: 4px 4px 10px;
+    scrollbar-width: thin; scrollbar-color: var(--line-2) transparent;
+  }
   .preset {
-    display: flex; flex-direction: column; gap: 5px; padding: 0; border: 0; background: none; cursor: pointer; text-align: left;
+    display: flex; flex-direction: column; gap: 6px; padding: 0; border: 0; background: none; cursor: pointer; text-align: left;
+    scroll-snap-align: start;
   }
   .preset canvas {
-    width: 100%; aspect-ratio: 4 / 3; object-fit: cover; display: block; border-radius: 4px;
-    border: 2px solid transparent; background: var(--raise);
+    width: 100%; aspect-ratio: 4 / 3; object-fit: cover; display: block; border-radius: 10px;
+    background: var(--surface-3); outline: 2px solid transparent; outline-offset: 2px;
+    transition: outline-color .15s, transform .15s;
   }
-  .preset[aria-pressed="true"] canvas { border-color: var(--safelight); }
-  .preset:hover canvas { border-color: #4a4454; }
-  .preset[aria-pressed="true"]:hover canvas { border-color: var(--safelight); }
-  .preset span { font-size: 12px; font-weight: 500; line-height: 1.2; }
+  .preset:hover canvas { outline-color: var(--line-2); }
+  .preset[aria-pressed="true"] canvas { outline-color: var(--accent); }
+  .preset span { font-size: 12px; font-weight: 500; line-height: 1.2; color: var(--soft); }
+  .preset[aria-pressed="true"] span { color: var(--text); }
 
-  .fx { border-top: 1px solid var(--line); }
-  .fx:last-child { border-bottom: 1px solid var(--line); }
-  .fx-head { display: flex; align-items: center; gap: 12px; padding: 11px 0; }
-  .fx-title { display: flex; flex-direction: column; min-width: 0; }
-  .fx-name { font-weight: 600; font-size: 14px; }
-  .fx-hint { font-size: 12px; color: var(--mute); }
-  .fx.off .fx-name { color: var(--mute); }
-  .fx-body { display: grid; gap: 12px; padding: 2px 0 16px 46px; }
-  .fx-body { grid-template-columns: minmax(0, 1fr); }
-  .fx[data-fx="expose"] .fx-body { padding-left: 0; }
+  /* ---- effect cards ---- */
+  #stack { display: grid; gap: 8px; }
+  .fx { background: var(--surface-2); border: 1px solid var(--line); border-radius: 14px; min-width: 0; }
+  .fx.on { border-color: var(--line-2); }
+  .fx-head { display: flex; align-items: center; gap: 10px; padding: 11px 12px 11px 14px; }
+  .fx-num { font: 500 11px var(--mono); color: var(--mute); width: 18px; flex: none; font-variant-numeric: tabular-nums; }
+  .fx.on .fx-num { color: var(--accent); }
+  .fx-title { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+  .fx-name { font-weight: 600; font-size: 14px; letter-spacing: -0.01em; }
+  .fx-hint { font-size: 12px; color: var(--mute); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .fx:not(.on) .fx-name { color: var(--soft); }
+  .fx-move { display: flex; gap: 0; flex: none; }
+  .fx-body {
+    display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px;
+    padding: 14px 14px 16px; border-top: 1px solid var(--line);
+  }
 
-  .switch { position: relative; width: 34px; height: 20px; flex: none; }
+  .icon-btn {
+    width: 28px; height: 28px; flex: none; display: grid; place-items: center;
+    border: 0; border-radius: 7px; background: none; color: var(--mute); cursor: pointer;
+  }
+  .icon-btn svg { width: 15px; height: 15px; }
+  .icon-btn:hover:not(:disabled) { background: rgba(255, 255, 255, .07); color: var(--text); }
+  .icon-btn:disabled { opacity: .25; cursor: default; }
+
+  .switch { position: relative; width: 36px; height: 21px; flex: none; }
   .switch input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; }
-  .switch span { position: absolute; inset: 0; border-radius: 10px; background: var(--line); transition: background .15s; pointer-events: none; }
-  .switch span::after { content: ""; position: absolute; top: 3px; left: 3px; width: 14px; height: 14px; border-radius: 50%; background: var(--mute); transition: transform .15s, background .15s; }
-  .switch input:checked + span { background: var(--safelight); }
-  .switch input:checked + span::after { transform: translateX(14px); background: var(--safelight-ink); }
-  .switch input:focus-visible + span { outline: 2px solid var(--safelight); outline-offset: 2px; }
-
-  .ctl { display: grid; grid-template-columns: 1fr auto; gap: 4px 8px; align-items: center; }
-  .ctl label { font-size: 12px; color: #cfc8d6; }
-  .ctl output { font-family: var(--mono); font-size: 11px; color: var(--mute); font-variant-numeric: tabular-nums; }
-  .ctl input[type=range], .ctl select, .ctl .seg { grid-column: 1 / -1; }
-  input[type=range] { width: 100%; accent-color: var(--safelight); height: 18px; margin: 0; }
-  select {
-    width: 100%; height: 30px; padding: 0 8px; border-radius: 5px;
-    background: var(--raise); border: 1px solid var(--line);
+  .switch span { position: absolute; inset: 0; border-radius: 999px; background: rgba(255, 255, 255, .12); transition: background .15s; pointer-events: none; }
+  .switch span::after {
+    content: ""; position: absolute; top: 3px; left: 3px; width: 15px; height: 15px; border-radius: 50%;
+    background: #fff; box-shadow: 0 1px 3px rgba(0, 0, 0, .4); transition: transform .18s cubic-bezier(.3, .7, .4, 1);
   }
-  .swatches { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+  .switch input:checked + span { background: var(--accent); }
+  .switch input:checked + span::after { transform: translateX(15px); }
+  .switch input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  /* ---- controls ---- */
+  .ctl { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px 8px; align-items: center; }
+  .ctl label { font-size: 12px; color: var(--soft); }
+  .ctl output { font: 11px var(--mono); color: var(--mute); font-variant-numeric: tabular-nums; }
+  .ctl input[type=range], .ctl select { grid-column: 1 / -1; }
+  input[type=range] {
+    -webkit-appearance: none; appearance: none; width: 100%; height: 20px; margin: 0;
+    background: transparent; cursor: pointer; --p: 50%;
+  }
+  input[type=range]::-webkit-slider-runnable-track {
+    height: 4px; border-radius: 4px;
+    background: linear-gradient(90deg, var(--accent) var(--p), rgba(255, 255, 255, .1) var(--p));
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 16px; height: 16px; margin-top: -6px; border-radius: 50%; border: 0;
+    background: #fff; box-shadow: 0 0 0 4px rgba(255, 181, 71, .16), 0 2px 6px rgba(0, 0, 0, .5);
+  }
+  input[type=range]::-moz-range-track { height: 4px; border-radius: 4px; background: rgba(255, 255, 255, .1); }
+  input[type=range]::-moz-range-progress { height: 4px; border-radius: 4px; background: var(--accent); }
+  input[type=range]::-moz-range-thumb {
+    width: 16px; height: 16px; border: 0; border-radius: 50%;
+    background: #fff; box-shadow: 0 0 0 4px rgba(255, 181, 71, .16), 0 2px 6px rgba(0, 0, 0, .5);
+  }
+  input[type=range]:focus-visible { outline: none; }
+  input[type=range]:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 4px var(--accent); }
+  input[type=range]:focus-visible::-moz-range-thumb { box-shadow: 0 0 0 4px var(--accent); }
+  select {
+    -webkit-appearance: none; appearance: none;
+    width: 100%; height: 34px; padding: 0 32px 0 11px; border-radius: 9px;
+    background: var(--surface-3) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2385848e' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 11px center;
+    border: 1px solid var(--line-2); font-size: 13px; cursor: pointer;
+  }
+  select:hover { border-color: rgba(255, 255, 255, .22); }
+  .swatches { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
   .swatch {
-    display: flex; flex-direction: column; gap: 3px; padding: 0; border: 0; background: none; cursor: pointer; text-align: left;
+    display: flex; flex-direction: column; gap: 5px; padding: 0; border: 0; background: none; cursor: pointer; text-align: left;
     font-size: 11px; color: var(--mute);
   }
-  .swatch i { display: block; height: 14px; border-radius: 3px; border: 2px solid transparent; }
+  .swatch i { display: block; height: 18px; border-radius: 6px; }
   .swatch[aria-pressed="true"] { color: var(--text); }
-  .swatch[aria-pressed="true"] i { border-color: var(--text); }
-  .layers { display: grid; gap: 8px; }
-  .layers, .layer-body { grid-template-columns: minmax(0, 1fr); }
-  .panel > div, .layer { min-width: 0; }
-  .layer { border: 1px solid var(--line); border-radius: 6px; background: var(--raise); }
-  .layer.muted { opacity: .55; }
-  .layer-head { display: flex; align-items: center; gap: 8px; padding: 6px 8px; }
-  .layer-head canvas { width: 44px; height: 33px; border-radius: 3px; flex: none; background: var(--ink); }
+  .swatch[aria-pressed="true"] i { box-shadow: 0 0 0 2px var(--surface-2), 0 0 0 3.5px var(--text); }
+  .check { display: flex; gap: 8px; align-items: center; font-size: 12px; color: var(--soft); cursor: pointer; }
+  .check input { accent-color: var(--accent); margin: 0; width: 15px; height: 15px; }
+  .ctl-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .ctl-row .mono { font: 11px var(--mono); color: var(--mute); }
+
+  /* ---- photo layers ---- */
+  .layers { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; }
+  .layer { border: 1px solid var(--line); border-radius: 11px; background: var(--surface-3); min-width: 0; }
+  .layer.muted { opacity: .5; }
+  .layer-head { display: flex; align-items: center; gap: 8px; padding: 6px 6px 6px 8px; }
+  .layer-head canvas, .layer-base canvas { width: 44px; height: 33px; border-radius: 6px; flex: none; background: var(--bg); }
   .layer-name {
     flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: flex-start;
     border: 0; background: none; padding: 0; cursor: pointer; text-align: left;
   }
   .layer-name b { font-size: 12px; font-weight: 600; }
   .layer-name small { font-size: 11px; color: var(--mute); max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .icon-btn {
-    width: 26px; height: 26px; flex: none; display: grid; place-items: center;
-    border: 1px solid transparent; border-radius: 4px; background: none; color: var(--mute); cursor: pointer; font-size: 13px; line-height: 1;
-  }
-  .icon-btn:hover:not(:disabled) { border-color: var(--line); color: var(--text); }
-  .icon-btn:disabled { opacity: .3; cursor: default; }
-  .layer-body { display: grid; gap: 12px; padding: 6px 10px 12px; border-top: 1px solid var(--line); }
-  .layer-base { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border: 1px dashed var(--line); border-radius: 6px; }
-  .layer-base canvas { width: 44px; height: 33px; border-radius: 3px; flex: none; }
+  .layer-body { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; padding: 12px 10px 12px; border-top: 1px solid var(--line); }
+  .layer-base { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border: 1px dashed var(--line-2); border-radius: 11px; }
   .layer-base span { flex: 1; min-width: 0; font-size: 12px; color: var(--mute); }
-  .layer-add { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
-  .layer-add .mono { flex: 1; }
-  .check { display: flex; gap: 8px; align-items: center; font-size: 12px; color: #cfc8d6; grid-column: 1 / -1; }
-  .check input { accent-color: var(--safelight); margin: 0; }
+  .layer-add { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  .layer-add .mono { flex: 1; font: 11px var(--mono); color: var(--mute); }
 
+  /* ---- dialog + toast ---- */
   dialog {
     max-width: min(720px, calc(100vw - 32px)); width: 100%;
-    background: var(--panel); color: var(--text);
-    border: 1px solid var(--line); border-radius: 10px; padding: 18px;
+    background: var(--surface); color: var(--text);
+    border: 1px solid var(--line-2); border-radius: 16px; padding: 20px;
+    box-shadow: 0 30px 80px rgba(0, 0, 0, .7);
   }
-  dialog::backdrop { background: rgba(0,0,0,.7); }
-  dialog h3 { margin: 0 0 4px; font-family: var(--display); font-size: 20px; }
-  dialog p { margin: 0 0 12px; color: var(--mute); font-size: 13px; max-width: 60ch; }
-  dialog img { display: block; width: 100%; height: auto; max-height: 60vh; object-fit: contain; background: #000; border-radius: 4px; }
-  .dlg-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px; }
+  dialog::backdrop { background: rgba(0, 0, 0, .7); backdrop-filter: blur(4px); }
+  dialog h3 { margin: 0 0 4px; font-size: 18px; font-weight: 600; letter-spacing: -0.02em; }
+  dialog p { margin: 0 0 14px; color: var(--mute); font-size: 13px; max-width: 60ch; }
+  dialog img { display: block; width: 100%; height: auto; max-height: 60vh; object-fit: contain; background: #000; border-radius: 8px; }
+  .dlg-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px; }
 
   .toast {
-    position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%);
-    background: var(--text); color: var(--ink); padding: 8px 14px; border-radius: 6px; font-size: 13px; font-weight: 500;
-    max-width: calc(100vw - 32px); box-shadow: 0 10px 30px rgba(0,0,0,.5); z-index: 10;
+    position: fixed; left: 50%; top: calc(var(--bar) + 12px + env(safe-area-inset-top, 0px)); transform: translateX(-50%);
+    background: rgba(243, 241, 236, .96); color: #0b0b0d; padding: 9px 16px; border-radius: 999px;
+    font-size: 13px; font-weight: 500; max-width: calc(100vw - 32px); text-align: center;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, .55); z-index: 20;
   }
-  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; }
+  }
 </style>
 </head>
 <body>
 <header class="bar">
   <div class="brand">
-    <span class="mark">Afterimage</span>
-    <span class="sub">photo → artwork</span>
+    <span class="logo" aria-hidden="true"></span>
+    <span class="mark">afterimage<small>studio</small></span>
   </div>
   <div class="actions">
-    <label class="btn primary" for="file1">Open photo</label>
+    <div class="pair">
+      <label class="btn" for="file1">Open photo</label>
+      <label class="btn" for="file2">Add layers</label>
+    </div>
     <input type="file" id="file1" accept="image/*">
-    <label class="btn" for="file2">Add layers</label>
     <input type="file" id="file2" accept="image/*" multiple>
-    <button class="btn" id="surprise" type="button">Surprise me</button>
-    <button class="btn" id="save" type="button">Save image</button>
+    <button class="btn chroma" id="surprise" type="button">Surprise me</button>
+    <button class="btn primary" id="save" type="button">Export</button>
   </div>
 </header>
 
 <main class="app">
   <section class="stage" id="stage">
     <div class="canvas-wrap"><canvas id="view" aria-label="Edited photo"></canvas></div>
-    <div class="stage-foot">
-      <span id="meta" class="mono"></span>
-      <button id="bigger" class="btn ghost only-narrow" type="button" aria-pressed="false">Bigger preview</button>
-      <button id="compare" class="btn ghost" type="button">Hold to see original</button>
+    <div class="dock">
+      <span class="status" id="status"><i></i><span id="meta">Ready</span></span>
+      <span class="sep" aria-hidden="true"></span>
+      <button id="bigger" class="dock-btn only-narrow" type="button" aria-pressed="false">Bigger</button>
+      <button id="compare" class="dock-btn" type="button">Hold to compare</button>
     </div>
-    <div class="drop" id="drop" hidden>Drop photos: the first becomes the base, the rest become layers</div>
+    <div class="drop" id="drop" hidden>Drop photos here. The first becomes the base, the rest become layers.</div>
     <div class="comparing-tag" id="compTag" hidden>Original</div>
   </section>
 
   <aside class="panel">
-    <div>
-      <h2 class="eyebrow">Recipes <span>tap to apply, then tweak</span></h2>
+    <section>
+      <div class="sec-head"><h2>Recipes</h2><span>Tap one, then tweak</span></div>
       <div class="presets" id="presets"></div>
-    </div>
-    <div>
-      <h2 class="eyebrow">Effect stack <span>runs top to bottom</span></h2>
+    </section>
+    <section>
+      <div class="sec-head"><h2>Effect stack</h2><span id="stackCount"></span></div>
       <div id="stack"></div>
-    </div>
+    </section>
   </aside>
 </main>
 
@@ -279,12 +373,17 @@
   <img id="saveImg" alt="Finished artwork at full size">
   <div class="dlg-actions"><button class="btn" id="closeDlg" type="button">Close</button></div>
 </dialog>
-<div class="toast" id="toast" hidden></div>
+<div class="toast" id="toast" role="status" hidden></div>
 
 <script>
 (() => {
 'use strict';
 const $ = s => document.querySelector(s);
+const ICON = {
+  up: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 15 6-6 6 6"/></svg>',
+  down: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>',
+  close: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>',
+};
 
 /* ---------- palettes for the color map ---------- */
 const PALETTES = {
@@ -305,7 +404,7 @@ const FX = [
     { k: 'hue',        label: 'Hue shift',  min: -180, max: 180, v: 0, unit: '°' },
     { k: 'black',      label: 'Crush blacks', min: 0, max: 100, v: 0 },
   ]},
-  { key: 'expose', name: 'Layers', hint: 'Stack photos so their colors bleed into each other', c: [
+  { key: 'expose', name: 'Photo layers', hint: 'Stack photos so their colors bleed into each other', c: [
     { k: 'list', type: 'layers' },
   ]},
   { key: 'solar', name: 'Solarize', hint: 'Flip the brightest tones, like light hitting a print mid-develop', c: [
@@ -331,6 +430,16 @@ const FX = [
     { k: 'fibers',   label: 'Line texture', min: 0, max: 100, v: 40, unit: '%' },
     { k: 'mix',      label: 'Strength', min: 0, max: 100, v: 90, unit: '%' },
   ]},
+  { key: 'corrupt', name: 'Byte corrupt', hint: 'Break the JPEG file itself, then decode the wreckage', c: [
+    { k: 'op', label: 'Damage', type: 'select', v: 'mix', opts: [['flip','Flip bits'],['shift','Shift runs of bytes'],['dup','Duplicate runs of bytes'],['mix','Mix all three']] },
+    { k: 'quality', label: 'JPEG quality', min: 5, max: 95, v: 60, unit: '%' },
+    { k: 'count', label: 'Bytes hit per pass', min: 1, max: 120, v: 12 },
+    { k: 'run', label: 'Run length', min: 2, max: 256, v: 24, unit: ' B', when: s => s.op !== 'flip' },
+    { k: 'generations', label: 'Generations', min: 1, max: 10, v: 1, unit: '×' },
+    { k: 'mask', label: 'Where damage lands', type: 'select', v: 'none', opts: [['none','Anywhere'],['bright','Bright areas'],['dark','Dark areas'],['edges','Along edges']] },
+    { k: 'maskAt', label: 'Mask threshold', min: 0, max: 100, v: 40, unit: '%', when: s => s.mask !== 'none' },
+    { k: 'reroll', type: 'reroll', v: 0 },
+  ]},
   { key: 'glitch', name: 'Glitch', hint: 'Split color channels and slip slices', c: [
     { k: 'shift',    label: 'Color split', min: 0, max: 40, v: 8 },
     { k: 'slices',   label: 'Slices', min: 0, max: 40, v: 10 },
@@ -341,6 +450,8 @@ const FX = [
     { k: 'grain',    label: 'Grain', min: 0, max: 100, v: 10, unit: '%' },
   ]},
 ];
+const FX_KEYS = FX.map(f => f.key);
+const fxByKey = k => FX.find(f => f.key === k);
 
 /* ---------- layer schema: each stacked photo gets its own copy of these ---------- */
 const BLENDS = [
@@ -372,7 +483,7 @@ function newLayer(name) {
 }
 
 function defaults(layers) {
-  const s = { seed: 7 };
+  const s = { seed: 7, order: [...FX_KEYS] };
   for (const fx of FX) {
     s[fx.key] = { on: false };
     for (const c of fx.c) if (c.v !== undefined) s[fx.key][c.k] = c.v;
@@ -380,12 +491,13 @@ function defaults(layers) {
   s.layers = (layers || []).map(L => ({ ...L }));
   return s;
 }
-// A recipe tunes the effects and, by position, the stacked layers. Layers past
-// the ones it mentions are switched off (their settings are kept).
+// A recipe tunes the effects, optionally their order, and, by position, the stacked
+// photo layers. Layers past the ones it mentions are switched off (settings kept).
 function withPreset(p, layers = state.layers) {
   const s = defaults(layers);
   for (const k in p) {
     if (k === 'seed') s.seed = p.seed;
+    else if (k === 'order') s.order = [...p.order, ...FX_KEYS.filter(f => !p.order.includes(f))];
     else if (k === 'layers') {
       s.expose.on = true;
       s.layers.forEach((L, i) => { if (p.layers[i]) Object.assign(L, { on: true }, p.layers[i]); else L.on = false; });
@@ -411,6 +523,13 @@ const PRESETS = [
     ],
     finish: { vignette: 30, grain: 8 },
   }},
+  { id: 'datarot', name: 'Data Rot', p: {
+    order: ['adjust', 'corrupt', 'poster'],
+    adjust: { contrast: 35, saturation: 170, black: 10 },
+    corrupt: { op: 'dup', quality: 45, count: 8, run: 40, generations: 2, mask: 'none' },
+    poster: { levels: 4, mix: 80 },
+    finish: { vignette: 25, grain: 4 },
+  }},
   { id: 'window', name: 'Window Glow', p: {
     adjust: { contrast: 30, saturation: 120, black: 45, brightness: -20 },
     layers: [
@@ -425,6 +544,12 @@ const PRESETS = [
     gmap: { palette: 'sodium', amount: 35, hard: false },
     finish: { vignette: 30, grain: 12 },
   }},
+  { id: 'edgedecay', name: 'Edge Decay', p: {
+    adjust: { contrast: 40, saturation: 130, black: 15 },
+    corrupt: { op: 'mix', quality: 55, count: 30, run: 16, generations: 5, mask: 'edges', maskAt: 22 },
+    gmap: { palette: 'acid', amount: 25, hard: false },
+    finish: { vignette: 40, grain: 6 },
+  }},
   { id: 'stacked', name: 'Stacked Light', p: {
     adjust: { contrast: 25, saturation: 140, black: 25, brightness: -10 },
     layers: [
@@ -432,6 +557,14 @@ const PRESETS = [
       { mode: 'screen', mask: 'shadows', opacity: 90, bleed: 60, scale: 150 },
     ],
     finish: { vignette: 45, grain: 10 },
+  }},
+  { id: 'bytebloom', name: 'Byte Bloom', p: {
+    order: ['adjust', 'expose', 'corrupt', 'gmap'],
+    adjust: { contrast: 30, saturation: 150 },
+    layers: [{ mode: 'screen', mask: 'layerbright', opacity: 80, bleed: 30, scale: 110 }],
+    corrupt: { op: 'shift', quality: 50, count: 18, run: 64, generations: 3, mask: 'bright', maskAt: 45 },
+    gmap: { palette: 'dusk', amount: 30, hard: false },
+    finish: { vignette: 35, grain: 6 },
   }},
   { id: 'melt', name: 'Melt', p: {
     adjust: { contrast: 30, saturation: 190 },
@@ -470,7 +603,7 @@ let activePreset = PRESETS[0].id;
 let primary = null;   // HTMLCanvasElement or HTMLImageElement
 let primaryId = 0;
 const layerImgs = new Map(); // layer uid -> canvas
-const WORK_MAX = 1400, EXPORT_MAX = 3200, THUMB_W = 180;
+const WORK_MAX = 1400, EXPORT_MAX = 3200, THUMB_W = 232;
 
 function mkCanvas(w, h) { const c = document.createElement('canvas'); c.width = w; c.height = h; return c; }
 function dims(img) { return [img.naturalWidth || img.width, img.naturalHeight || img.height]; }
@@ -822,49 +955,220 @@ function fxFinish(d, p, W, H, seed) {
   }
 }
 
-function processImage(S, W, H) {
+/* ---------- byte corrupt: damage the JPEG file, not the pixels ---------- */
+const toBlob = (c, type, q) => new Promise((res, rej) => c.toBlob(b => (b ? res(b) : rej(new Error('encode'))), type, q));
+
+// Entropy-coded data of the first scan: from just past the SOS header to the next
+// real marker (EOI or a later segment). Everything before it is header and stays intact.
+function findScan(b) {
+  if (b[0] !== 0xFF || b[1] !== 0xD8) return null;
+  let i = 2;
+  while (i + 4 < b.length) {
+    if (b[i] !== 0xFF) return null;
+    const m = b[i + 1];
+    if (m === 0xFF) { i++; continue; }
+    if (m === 0x01 || (m >= 0xD0 && m <= 0xD7)) { i += 2; continue; }
+    const len = (b[i + 2] << 8) | b[i + 3];
+    if (m === 0xDA) {
+      const start = i + 2 + len;
+      let end = start;
+      while (end + 1 < b.length && !(b[end] === 0xFF && b[end + 1] !== 0x00 && (b[end + 1] < 0xD0 || b[end + 1] > 0xD7))) end++;
+      return end - start > 64 ? { start, end } : null;
+    }
+    i += 2 + len;
+  }
+  return null;
+}
+
+function damageBytes(src, scan, p, seed) {
+  const r = rng(seed), buf = src.slice(), inserts = [];
+  const { start, end } = scan, span = end - start;
+  const ops = ['flip', 'shift', 'dup'];
+  for (let n = 0; n < p.count; n++) {
+    const op = p.op === 'mix' ? ops[(r() * 3) | 0] : p.op;
+    const run = op === 'flip' ? 1 : Math.max(2, Math.min(p.run, span >> 2));
+    // pick an offset inside the scan that isn't part of a 0xFF marker or stuffing pair
+    let i = -1;
+    for (let tries = 0; tries < 8; tries++) {
+      const c = start + 1 + ((r() * (span - run - 2)) | 0);
+      if (buf[c - 1] !== 0xFF && buf[c] !== 0xFF && buf[c + run - 1] !== 0xFF) { i = c; break; }
+    }
+    if (i < 0) continue;
+    if (op === 'flip') {
+      let v = buf[i] ^ (1 << ((r() * 8) | 0));
+      if (v === 0xFF) v ^= 0x01;
+      buf[i] = v;
+    } else if (op === 'shift') {
+      const k = 1 + ((r() * (run - 1)) | 0), seg = buf.slice(i, i + run);
+      for (let j = 0; j < run; j++) buf[i + j] = seg[(j + k) % run];
+    } else {
+      inserts.push([i + run, i, run]);
+    }
+  }
+  if (!inserts.length) return buf;
+  // duplicated runs make the file longer and knock every later block out of step
+  inserts.sort((a, b) => a[0] - b[0]);
+  const extra = inserts.reduce((s, x) => s + x[2], 0), out = new Uint8Array(buf.length + extra);
+  let o = 0, last = 0;
+  for (const [at, from, len] of inserts) {
+    out.set(buf.subarray(last, at), o); o += at - last;
+    out.set(buf.subarray(from, from + len), o); o += len;
+    last = at;
+  }
+  out.set(buf.subarray(last), o);
+  return out;
+}
+
+async function decodeJpeg(bytes, g, W, H) {
+  const blob = new Blob([bytes], { type: 'image/jpeg' });
+  let img;
+  try {
+    if (window.createImageBitmap) img = await createImageBitmap(blob);
+    else {
+      const url = URL.createObjectURL(blob);
+      img = new Image(); img.src = url;
+      try { await img.decode(); } finally { URL.revokeObjectURL(url); }
+    }
+  } catch { return null; }
+  g.clearRect(0, 0, W, H); g.drawImage(img, 0, 0, W, H);
+  if (img.close) img.close();
+  return g.getImageData(0, 0, W, H).data;
+}
+
+function blurMask(m, W, H, rad) {
+  const tmp = new Float32Array(m.length), n = rad * 2 + 1;
+  for (let y = 0; y < H; y++) {
+    let s = 0; const row = y * W;
+    for (let x = -rad; x <= rad; x++) s += m[row + Math.min(W - 1, Math.max(0, x))];
+    for (let x = 0; x < W; x++) {
+      tmp[row + x] = s / n;
+      s += m[row + Math.min(W - 1, x + rad + 1)] - m[row + Math.max(0, x - rad)];
+    }
+  }
+  for (let x = 0; x < W; x++) {
+    let s = 0;
+    for (let y = -rad; y <= rad; y++) s += tmp[Math.min(H - 1, Math.max(0, y)) * W + x];
+    for (let y = 0; y < H; y++) {
+      m[y * W + x] = s / n;
+      s += tmp[Math.min(H - 1, y + rad + 1) * W + x] - tmp[Math.max(0, y - rad) * W + x];
+    }
+  }
+}
+// 0..1 per pixel: where the damage is allowed to show
+function buildMask(d, W, H, kind, at) {
+  const N = W * H, m = new Float32Array(N), L = new Float32Array(N);
+  for (let j = 0, i = 0; j < N; j++, i += 4) L[j] = (.2126 * d[i] + .7152 * d[i + 1] + .0722 * d[i + 2]) / 255;
+  if (kind === 'edges') {
+    for (let y = 1; y < H - 1; y++) for (let x = 1; x < W - 1; x++) {
+      const j = y * W + x;
+      const gx = L[j - W + 1] + 2 * L[j + 1] + L[j + W + 1] - L[j - W - 1] - 2 * L[j - 1] - L[j + W - 1];
+      const gy = L[j + W - 1] + 2 * L[j + W] + L[j + W + 1] - L[j - W - 1] - 2 * L[j - W] - L[j - W + 1];
+      m[j] = smooth((Math.min(1, Math.hypot(gx, gy) / 2) - at * 0.6) / 0.08 + 0.5);
+    }
+    blurMask(m, W, H, Math.max(1, Math.round(W / 400)));
+    for (let j = 0; j < N; j++) m[j] = Math.min(1, m[j] * 2.2);
+  } else {
+    for (let j = 0; j < N; j++) {
+      const v = kind === 'bright' ? L[j] - at : (1 - L[j]) - (1 - at);
+      m[j] = smooth(v / 0.14 + 0.5);
+    }
+  }
+  return m;
+}
+
+async function fxCorrupt(d, p, W, H, seed) {
+  const src = d.slice();
+  const mask = p.mask === 'none' ? null : buildMask(src, W, H, p.mask, p.maskAt / 100);
+  const c = mkCanvas(W, H), g = c.getContext('2d', { willReadFrequently: true });
+  let cur = d;
+  for (let gen = 0; gen < p.generations; gen++) {
+    g.putImageData(new ImageData(cur, W, H), 0, 0);
+    const bytes = new Uint8Array(await (await toBlob(c, 'image/jpeg', p.quality / 100)).arrayBuffer());
+    const scan = findScan(bytes);
+    let out = null;
+    // a damaged file can fail to decode: try again with fresh offsets
+    if (scan) for (let attempt = 0; attempt < 6 && !out; attempt++) {
+      const s = (Math.imul(seed + 1, 7919) ^ Math.imul(p.reroll + 1, 104729) ^ Math.imul(gen + 1, 15485863) ^ Math.imul(attempt + 1, 2654435761)) | 0;
+      out = await decodeJpeg(damageBytes(bytes, scan, p, s), g, W, H);
+    }
+    if (!out) out = await decodeJpeg(bytes, g, W, H);
+    if (!out) break;
+    const next = new Uint8ClampedArray(out.length);
+    for (let j = 0, i = 0; i < out.length; j++, i += 4) {
+      const k = mask ? mask[j] : 1;
+      next[i] = src[i] + (out[i] - src[i]) * k;
+      next[i + 1] = src[i + 1] + (out[i + 1] - src[i + 1]) * k;
+      next[i + 2] = src[i + 2] + (out[i + 2] - src[i + 2]) * k;
+      next[i + 3] = 255;
+    }
+    cur = next;
+  }
+  if (cur !== d) d.set(cur);
+}
+
+/* ---------- the pipeline runs the stack in the order you set ---------- */
+async function processImage(S, W, H) {
   const d = new Uint8ClampedArray(getBase(W, H).data);
-  if (S.adjust.on) fxAdjust(d, S.adjust);
-  if (S.expose.on) for (const L of S.layers) if (L.on && L.opacity > 0 && layerImgs.has(L.uid)) fxLayer(d, L, W, H);
-  if (S.solar.on) fxSolar(d, S.solar);
-  if (S.poster.on) fxPoster(d, S.poster);
-  if (S.gmap.on) fxGmap(d, S.gmap);
-  if (S.streak.on) fxStreak(d, S.streak, W, H, S.seed);
-  if (S.glitch.on) fxGlitch(d, S.glitch, W, H, S.seed);
-  if (S.finish.on) fxFinish(d, S.finish, W, H, S.seed);
+  for (const key of S.order) {
+    const p = S[key]; if (!p || !p.on) continue;
+    switch (key) {
+      case 'adjust': fxAdjust(d, p); break;
+      case 'expose': for (const L of S.layers) if (L.on && L.opacity > 0 && layerImgs.has(L.uid)) fxLayer(d, L, W, H); break;
+      case 'solar': fxSolar(d, p); break;
+      case 'poster': fxPoster(d, p); break;
+      case 'gmap': fxGmap(d, p); break;
+      case 'streak': fxStreak(d, p, W, H, S.seed); break;
+      case 'corrupt': await fxCorrupt(d, p, W, H, S.seed); break;
+      case 'glitch': fxGlitch(d, p, W, H, S.seed); break;
+      case 'finish': fxFinish(d, p, W, H, S.seed); break;
+    }
+  }
   return new ImageData(d, W, H);
 }
 
 /* ---------- rendering ---------- */
 const view = $('#view'), vctx = view.getContext('2d');
-let showingOriginal = false, pending = false;
+let showingOriginal = false, renderBusy = false, renderDirty = false;
+const nextFrame = () => new Promise(r => requestAnimationFrame(() => r()));
 
-function draw() {
+async function draw() {
   if (!primary) return;
   const [W, H] = fitSize(primary, WORK_MAX);
-  if (view.width !== W || view.height !== H) { view.width = W; view.height = H; }
   const t0 = performance.now();
-  vctx.putImageData(showingOriginal ? getBase(W, H) : processImage(state, W, H), 0, 0);
-  const [ow, oh] = dims(primary);
-  $('#meta').textContent = `${ow} × ${oh} px · preview ${W} × ${H} · ${Math.round(performance.now() - t0)} ms`;
+  const slow = setTimeout(() => $('#status').classList.add('busy'), 120);
+  let img;
+  try { img = showingOriginal ? getBase(W, H) : await processImage(state, W, H); }
+  catch (err) { console.error(err); img = getBase(W, H); }
+  clearTimeout(slow); $('#status').classList.remove('busy');
+  if (view.width !== W || view.height !== H) { view.width = W; view.height = H; }
+  vctx.putImageData(img, 0, 0);
+  $('#meta').textContent = `${W}×${H} · ${Math.round(performance.now() - t0)} ms`;
 }
+// Renders never overlap: changes made mid-render trigger one more pass afterwards.
 function schedule() {
-  if (pending) return; pending = true;
-  requestAnimationFrame(() => { pending = false; draw(); });
+  renderDirty = true;
+  if (renderBusy) return;
+  renderBusy = true;
+  (async () => {
+    while (renderDirty) { renderDirty = false; await nextFrame(); await draw(); }
+    renderBusy = false;
+  })();
 }
 
-function drawThumbs() {
+let thumbRun = 0, thumbTimer = 0;
+async function drawThumbs() {
   if (!primary) return;
+  const run = ++thumbRun;
   const [ow, oh] = dims(primary);
   const W = THUMB_W, H = Math.max(1, Math.round(THUMB_W * oh / ow));
   for (const pr of PRESETS) {
+    const img = await processImage(withPreset(pr.p), W, H);
+    if (run !== thumbRun) return;
     const c = document.querySelector(`[data-preset="${pr.id}"] canvas`);
-    c.width = W; c.height = H;
-    c.getContext('2d').putImageData(processImage(withPreset(pr.p), W, H), 0, 0);
+    c.width = W; c.height = H; c.getContext('2d').putImageData(img, 0, 0);
   }
 }
-let thumbTimer = 0;
-function refreshThumbs() { clearTimeout(thumbTimer); thumbTimer = setTimeout(drawThumbs, 60); }
+function refreshThumbs() { clearTimeout(thumbTimer); thumbTimer = setTimeout(drawThumbs, 80); }
 function drawCover(c, img, w, h) {
   c.width = w; c.height = h; const g = c.getContext('2d');
   const [iw, ih] = dims(img), s = Math.max(w / iw, h / ih);
@@ -874,6 +1178,14 @@ function drawCover(c, img, w, h) {
 /* ---------- UI ---------- */
 function fmt(c, v) { return (c.k === 'brightness' || c.k === 'contrast' || c.k === 'hue') && v > 0 ? `+${v}${c.unit || ''}` : `${v}${c.unit || ''}`; }
 const esc = s => String(s).replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
+// set a control's value, its readout, and the filled part of a slider track
+function setCtl(input, c, v) {
+  if (c.type === 'check') { input.checked = v; return; }
+  input.value = v;
+  if (c.type) return;
+  input.style.setProperty('--p', `${(v - c.min) / (c.max - c.min) * 100}%`);
+  const out = input.parentElement.querySelector('output'); if (out) out.textContent = fmt(c, v);
+}
 
 function buildPresets() {
   $('#presets').innerHTML = PRESETS.map(p =>
@@ -896,14 +1208,20 @@ function buildStack() {
   root.innerHTML = FX.map(fx => {
     const body = fx.c.map(c => {
       if (c.type === 'layers') return `<div class="layers" id="layerList"></div>`;
+      if (c.type === 'reroll') return `<div class="ctl-row" data-c="${c.k}"><button class="btn small" type="button" data-reroll>New damage pattern</button><span class="mono"></span></div>`;
       if (c.type === 'palette') return `<div class="swatches" data-c="${c.k}" role="group" aria-label="Palette">${Object.entries(PALETTES).map(([k, p]) =>
         `<button type="button" class="swatch" data-pal="${k}"><i style="background:linear-gradient(90deg,${p.stops.join(',')})"></i>${p.name}</button>`).join('')}</div>`;
       return ctlHTML(c, `c-${fx.key}-${c.k}`, `data-c="${c.k}"`);
     }).join('');
     return `<div class="fx" data-fx="${fx.key}">
       <div class="fx-head">
-        <label class="switch"><input type="checkbox" id="on-${fx.key}" aria-label="Turn ${fx.name} on or off"><span></span></label>
+        <span class="fx-num" aria-hidden="true"></span>
         <div class="fx-title"><span class="fx-name">${fx.name}</span><span class="fx-hint">${fx.hint}</span></div>
+        <div class="fx-move">
+          <button class="icon-btn" type="button" data-move="-1" aria-label="Run ${fx.name} earlier">${ICON.up}</button>
+          <button class="icon-btn" type="button" data-move="1" aria-label="Run ${fx.name} later">${ICON.down}</button>
+        </div>
+        <label class="switch"><input type="checkbox" id="on-${fx.key}" aria-label="Turn ${fx.name} on or off"><span></span></label>
       </div>
       <div class="fx-body">${body}</div>
     </div>`;
@@ -917,18 +1235,42 @@ function buildStack() {
     if (t.id === `on-${key}`) state[key].on = t.checked;
     else {
       const ctl = t.closest('[data-c]'); if (!ctl) return;
-      const c = FX.find(f => f.key === key).c.find(c => c.k === ctl.dataset.c);
+      const c = fxByKey(key).c.find(c => c.k === ctl.dataset.c);
       state[key][c.k] = t.type === 'range' ? +t.value : t.type === 'checkbox' ? t.checked : t.value;
-      if (t.type === 'range') ctl.querySelector('output').textContent = fmt(c, +t.value);
+      if (t.type === 'range') setCtl(t, c, +t.value);
     }
     markCustom(); syncVisibility(); schedule();
   });
   root.addEventListener('click', e => {
     const act = e.target.closest('[data-act]');
     if (act) { onLayerAction(act.dataset.act, +act.closest('.layer').dataset.uid); return; }
+    const mv = e.target.closest('[data-move]');
+    if (mv) { moveFx(mv.closest('.fx').dataset.fx, +mv.dataset.move); return; }
+    if (e.target.closest('[data-reroll]')) {
+      state.corrupt.reroll = (state.corrupt.reroll + 1) % 10000;
+      markCustom(); syncVisibility(); schedule(); return;
+    }
     const sw = e.target.closest('.swatch'); if (!sw) return;
     state.gmap.palette = sw.dataset.pal; state.gmap.on = true;
     markCustom(); syncUI(); schedule();
+  });
+}
+function moveFx(key, dir) {
+  const i = state.order.indexOf(key), j = i + dir;
+  if (j < 0 || j >= state.order.length) return;
+  [state.order[i], state.order[j]] = [state.order[j], state.order[i]];
+  markCustom(); syncOrder(); schedule();
+  document.querySelector(`[data-fx="${key}"] [data-move="${dir}"]`)?.focus();
+}
+// put the cards in pipeline order and number them
+function syncOrder() {
+  const root = $('#stack'), last = state.order.length - 1;
+  state.order.forEach((key, i) => {
+    const el = root.querySelector(`[data-fx="${key}"]`);
+    root.appendChild(el);
+    el.querySelector('.fx-num').textContent = String(i + 1).padStart(2, '0');
+    el.querySelector('[data-move="-1"]').disabled = i === 0;
+    el.querySelector('[data-move="1"]').disabled = i === last;
   });
 }
 
@@ -948,9 +1290,9 @@ function renderLayers() {
         <label class="switch"><input type="checkbox" data-lon ${L.on ? 'checked' : ''} aria-label="Show layer ${i + 1}"><span></span></label>
         <canvas aria-hidden="true"></canvas>
         <button class="layer-name" type="button" data-act="toggle" aria-expanded="${open}"><b>Layer ${i + 1}</b><small>${esc(L.name)} · <span data-mode>${blendLabel(L.mode)}</span></small></button>
-        <button class="icon-btn" type="button" data-act="up" aria-label="Move layer ${i + 1} up" ${i === 0 ? 'disabled' : ''}>↑</button>
-        <button class="icon-btn" type="button" data-act="down" aria-label="Move layer ${i + 1} down" ${i === n - 1 ? 'disabled' : ''}>↓</button>
-        <button class="icon-btn" type="button" data-act="remove" aria-label="Remove layer ${i + 1}">✕</button>
+        <button class="icon-btn" type="button" data-act="up" aria-label="Move layer ${i + 1} up" ${i === 0 ? 'disabled' : ''}>${ICON.up}</button>
+        <button class="icon-btn" type="button" data-act="down" aria-label="Move layer ${i + 1} down" ${i === n - 1 ? 'disabled' : ''}>${ICON.down}</button>
+        <button class="icon-btn" type="button" data-act="remove" aria-label="Remove layer ${i + 1}">${ICON.close}</button>
       </div>
       <div class="layer-body"${open ? '' : ' hidden'}>${body}
         <div class="layer-add"><button class="btn small" type="button" data-act="base">Swap with base photo</button></div>
@@ -966,8 +1308,7 @@ function renderLayers() {
     drawCover(el.querySelector('.layer-head canvas'), layerImgs.get(L.uid), 88, 66);
     for (const c of LAYER_C) {
       const input = el.querySelector(`#l${L.uid}-${c.k}`);
-      input.value = L[c.k];
-      if (!c.type) input.previousElementSibling.textContent = fmt(c, L[c.k]);
+      setCtl(input, c, L[c.k]);
     }
     syncLayerVisibility(el, L);
   }
@@ -981,7 +1322,7 @@ function onLayerInput(t, lay) {
   else {
     const ctl = t.closest('[data-lc]'), c = LAYER_C.find(c => c.k === ctl.dataset.lc);
     L[c.k] = t.type === 'range' ? +t.value : t.value;
-    if (t.type === 'range') ctl.querySelector('output').textContent = fmt(c, +t.value);
+    if (t.type === 'range') setCtl(t, c, +t.value);
     if (c.k === 'mode') lay.querySelector('[data-mode]').textContent = blendLabel(L.mode);
     syncLayerVisibility(lay, L);
   }
@@ -1017,68 +1358,81 @@ function markCustom() {
   document.querySelectorAll('.preset').forEach(b => b.setAttribute('aria-pressed', 'false'));
 }
 function syncVisibility() {
+  let on = 0;
   for (const fx of FX) {
     const el = document.querySelector(`[data-fx="${fx.key}"]`), s = state[fx.key];
-    el.classList.toggle('off', !s.on);
+    el.classList.toggle('on', s.on); if (s.on) on++;
     el.querySelector('.fx-body').hidden = !s.on;
     for (const c of fx.c) if (c.when) el.querySelector(`[data-c="${c.k}"]`).hidden = !c.when(s);
   }
+  const rr = document.querySelector('[data-fx="corrupt"] [data-c="reroll"] .mono');
+  if (rr) rr.textContent = `Pattern #${state.corrupt.reroll + 1}`;
+  $('#stackCount').textContent = `${on} of ${FX.length} on · runs top to bottom`;
 }
 function syncUI() {
   for (const fx of FX) {
     const s = state[fx.key], el = document.querySelector(`[data-fx="${fx.key}"]`);
     el.querySelector(`#on-${fx.key}`).checked = s.on;
     for (const c of fx.c) {
-      if (c.type === 'layers') continue;
+      if (c.type === 'layers' || c.type === 'reroll') continue;
       if (c.type === 'palette') { el.querySelectorAll('.swatch').forEach(b => b.setAttribute('aria-pressed', b.dataset.pal === s[c.k])); continue; }
-      const input = el.querySelector(`#c-${fx.key}-${c.k}`);
-      if (c.type === 'check') input.checked = s[c.k];
-      else { input.value = s[c.k]; if (!c.type) input.closest('.ctl').querySelector('output').textContent = fmt(c, s[c.k]); }
+      setCtl(el.querySelector(`#c-${fx.key}-${c.k}`), c, s[c.k]);
     }
   }
   document.querySelectorAll('.preset').forEach(b => b.setAttribute('aria-pressed', b.dataset.preset === activePreset));
+  syncOrder();
   syncVisibility();
   renderLayers();
 }
 
-/* ---------- surprise me ---------- */
+/* ---------- surprise me: picks the effects, their order, and the photo layers ---------- */
 function surprise() {
-  const R = Math.random, pick = a => a[(R() * a.length) | 0];
-  const s = defaults(state.layers); s.seed = (R() * 1e6) | 0;
-  const randomize = key => {
-    const fx = FX.find(f => f.key === key); s[key].on = true;
-    for (const c of fx.c) {
-      if (c.type === 'layers') continue;
-      if (c.type === 'select') s[key][c.k] = pick(c.opts)[0];
-      else if (c.type === 'check') s[key][c.k] = R() < 0.5;
-      else if (c.type === 'palette') s[key][c.k] = pick(Object.keys(PALETTES));
-      else s[key][c.k] = Math.round(c.min + R() * (c.max - c.min));
-    }
+  const R = Math.random, pick = a => a[(R() * a.length) | 0], ri = (a, b) => a + ((R() * (b - a + 1)) | 0);
+  const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = (R() * (i + 1)) | 0; [a[i], a[j]] = [a[j], a[i]]; } return a; };
+  const s = defaults(state.layers); s.seed = ri(1, 999999);
+  // tasteful ranges; anything not listed falls back to the slider's full range
+  const TAME = {
+    adjust: () => ({ contrast: ri(10, 65), saturation: ri(70, 240), brightness: ri(-20, 8), hue: R() < 0.3 ? ri(-180, 180) : 0, black: ri(0, 40) }),
+    solar: () => ({ threshold: ri(90, 200), mix: ri(60, 100) }),
+    poster: () => ({ levels: ri(2, 5), mix: ri(70, 100) }),
+    gmap: () => ({ palette: pick(Object.keys(PALETTES)), amount: ri(25, 90), hard: R() < 0.4 }),
+    corrupt: () => ({ op: pick(['flip', 'shift', 'dup', 'mix']), quality: ri(15, 85), count: ri(3, 40), run: ri(4, 96), generations: ri(1, 4),
+      mask: R() < 0.5 ? 'none' : pick(['bright', 'dark', 'edges']), maskAt: ri(15, 70), reroll: ri(0, 9999) }),
+    glitch: () => ({ shift: ri(0, 20), slices: ri(0, 24), displace: ri(5, 60) }),
+    finish: () => ({ vignette: ri(0, 60), grain: ri(0, 18) }),
   };
-  Object.assign(s.adjust, { on: true, contrast: 15 + (R() * 55 | 0), saturation: 70 + (R() * 170 | 0), brightness: -20 + (R() * 25 | 0), hue: R() < 0.3 ? (R() * 360 - 180 | 0) : 0, black: R() * 45 | 0 });
-  const pool = ['solar', 'poster', 'gmap', 'streak', 'glitch'].sort(() => R() - 0.5);
-  pool.slice(0, 1 + (R() < 0.5 ? 1 : 0)).forEach(randomize);
-  if (s.layers.length && R() < 0.8) {
-    s.expose.on = true;
-    for (const L of s.layers) Object.assign(L, {
-      on: R() < 0.85, mode: pick(BLENDS)[0],
-      mask: R() < 0.4 ? 'full' : pick(['layerbright', 'layerdark', 'shadows', 'highlights']),
-      opacity: 40 + (R() * 60 | 0), bleed: R() * 80 | 0, scale: 100 + (R() * 80 | 0), panX: R() * 100 | 0, panY: R() * 100 | 0,
-    });
+  const pool = FX_KEYS.filter(k => k !== 'expose' || s.layers.length);
+  const chosen = shuffle([...pool]).slice(0, ri(3, Math.min(6, pool.length)));
+  for (const key of chosen) {
+    const p = s[key]; p.on = true;
+    if (TAME[key]) { Object.assign(p, TAME[key]()); continue; }
+    for (const c of fxByKey(key).c) {
+      if (c.type === 'select') p[c.k] = pick(c.opts)[0];
+      else if (c.type === 'check') p[c.k] = R() < 0.5;
+      else if (!c.type) p[c.k] = ri(c.min, c.max);
+    }
   }
-  if (s.solar.on) s.solar.threshold = 90 + (R() * 110 | 0);
-  if (s.poster.on) s.poster.levels = 2 + (R() * 4 | 0);
-  if (s.gmap.on) s.gmap.amount = 30 + (R() * 70 | 0);
-  if (s.glitch.on) s.glitch.shift = R() * 20 | 0;
-  Object.assign(s.finish, { on: true, vignette: R() * 60 | 0, grain: R() * 18 | 0 });
+  if (s.expose.on) {
+    shuffle(s.layers);
+    s.layers.forEach(L => Object.assign(L, {
+      on: R() < 0.75, mode: pick(BLENDS)[0],
+      mask: R() < 0.4 ? 'full' : pick(['layerbright', 'layerdark', 'shadows', 'highlights']),
+      opacity: ri(40, 100), bleed: ri(0, 80), scale: ri(100, 180), panX: ri(0, 100), panY: ri(0, 100),
+    }));
+    if (!s.layers.some(L => L.on)) s.layers[0].on = true;
+  }
+  // the chosen effects run in the shuffled order; the rest wait, switched off, below them
+  s.order = [...chosen, ...FX_KEYS.filter(k => !chosen.includes(k))];
   state = s; activePreset = null; syncUI(); schedule();
+  toast(chosen.map(k => fxByKey(k).name).join(' → '));
+}
+
+function toast(msg) {
+  const t = $('#toast'); t.textContent = msg; t.hidden = false;
+  clearTimeout(toast.t); toast.t = setTimeout(() => { t.hidden = true; }, 3600);
 }
 
 /* ---------- files ---------- */
-function toast(msg) {
-  const t = $('#toast'); t.textContent = msg; t.hidden = false;
-  clearTimeout(toast.t); toast.t = setTimeout(() => { t.hidden = true; }, 3200);
-}
 function readImage(file) {
   return new Promise((resolve, reject) => {
     if (!file.type.startsWith('image/') && !/\.(jpe?g|png|webp|gif|bmp|avif)$/i.test(file.name)) { reject(new Error('type')); return; }
@@ -1144,24 +1498,25 @@ for (const el of [$('#compare'), view]) {
 $('#compare').addEventListener('keydown', e => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); setOriginal(true); } });
 $('#compare').addEventListener('keyup', () => setOriginal(false));
 
-/* save at full size */
-$('#save').addEventListener('click', () => {
+/* export at full size */
+$('#save').addEventListener('click', async () => {
   if (!primary) return;
   const btn = $('#save'); btn.textContent = 'Rendering…'; btn.disabled = true;
-  setTimeout(() => {
+  try {
     const [W, H] = fitSize(primary, EXPORT_MAX), c = mkCanvas(W, H);
-    c.getContext('2d').putImageData(processImage(state, W, H), 0, 0);
-    c.toBlob(blob => {
-      btn.textContent = 'Save image'; btn.disabled = false;
-      if (!blob) { toast('Couldn’t render the image. Try a smaller photo.'); return; }
-      const filename = `afterimage-${Date.now()}.png`;
-      if (downloads) {
-        downloads.save({ filename, data: blob })
-          .then(() => toast(`Saved ${W} × ${H} px PNG.`))
-          .catch(err => { if (err && err.code === 'declined') toast('Save cancelled.'); else showSaved(blob, W, H, filename); });
-      } else showSaved(blob, W, H, filename);
-    }, 'image/png');
-  }, 30);
+    c.getContext('2d').putImageData(await processImage(state, W, H), 0, 0);
+    const blob = await toBlob(c, 'image/png');
+    const filename = `afterimage-${Date.now()}.png`;
+    if (downloads) {
+      downloads.save({ filename, data: blob })
+        .then(() => toast(`Saved ${W} × ${H} px PNG.`))
+        .catch(err => { if (err && err.code === 'declined') toast('Export cancelled.'); else showSaved(blob, W, H, filename); });
+    } else showSaved(blob, W, H, filename);
+  } catch (err) {
+    console.error(err); toast('Couldn’t render the image. Try a smaller photo.');
+  } finally {
+    btn.textContent = 'Export'; btn.disabled = false;
+  }
 });
 function showSaved(blob, W, H, filename) {
   const url = URL.createObjectURL(blob);
@@ -1179,7 +1534,7 @@ $('#surprise').addEventListener('click', surprise);
 $('#bigger').addEventListener('click', e => {
   const big = $('#stage').classList.toggle('big');
   e.currentTarget.setAttribute('aria-pressed', big);
-  e.currentTarget.textContent = big ? 'Smaller preview' : 'Bigger preview';
+  e.currentTarget.textContent = big ? 'Smaller' : 'Bigger';
 });
 // Installed as a home-screen app: cache the page so it opens offline.
 if ('serviceWorker' in navigator && location.protocol === 'https:') {
@@ -1197,8 +1552,8 @@ openLayers.add(state.layers[0].uid);
 activePreset = 'bleed';
 state = withPreset(PRESETS.find(p => p.id === activePreset).p);
 syncUI();
-draw();
-drawThumbs();
+schedule();
+setTimeout(drawThumbs, 150);
 })();
 </script>
 </body>

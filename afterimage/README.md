@@ -4,7 +4,9 @@ A browser photo editor for turning your own photos into pop-art, double-exposure
 
 Open `index.html` in any modern browser. Use **Open photo** for the base and **Add layers** to stack more photos on top (you can pick several at once, or drop several onto the canvas). There's nothing to install, and your photos stay on your device.
 
-## Effect stack (runs top to bottom)
+## Effect stack
+
+Effects run top to bottom. Use the arrows on each card to change the order: posterizing before or after a byte corrupt gives very different results.
 
 | Effect | What it does |
 | --- | --- |
@@ -14,6 +16,7 @@ Open `index.html` in any modern browser. Use **Open photo** for the base and **A
 | Posterize | Snaps each color channel into flat bands |
 | Color map | Repaints shadows through highlights with a palette (Pop Eye, Neon Dusk, Sodium, Cyanotype, Acid, Infrared) |
 | Pixel streak | Smears pixels into long lines or drips of light, downward, upward or sideways |
+| Byte corrupt | Encodes the image as a JPEG (quality slider), flips bits, shifts or duplicates runs of bytes inside the compressed scan data (never the header), then decodes the wreckage. If a damaged file won't decode it retries with new offsets. **Generations** repeats this, feeding each result back in. An optional mask (bright areas, dark areas or edges) limits where the damage shows. **New damage pattern** reseeds it. |
 | Glitch | RGB channel split and displaced slices |
 | Finish | Vignette and film grain |
 
@@ -23,9 +26,10 @@ Open `index.html` in any modern browser. Use **Open photo** for the base and **A
 - **Color Bleed**, **Stacked Light**, **Melt**: several photos layered so their colors run into each other
 - **Window Glow**: a dark scene with a second photo glowing through a window
 - **Light Rain**: vertical pixel streaks over a warm, dark city
+- **Data Rot**, **Edge Decay**, **Byte Bloom**: byte-corrupt recipes (Edge Decay keeps the damage along edges)
 - **Sabattier**, **Ghost Signal**, **Infrared Drip**: more starting points
 
-**Surprise me** builds a random stack. Hold the image (or press **Hold to see original**) to compare with the original photo. **Save image** exports a PNG up to 3200 px on the long side.
+**Surprise me** picks which effects to use, the order they run in, which photo layers are on and how they're stacked, and their settings. A toast shows the order it chose. Hold the image (or press **Hold to see original**) to compare with the original photo. **Export** saves a PNG up to 3200 px on the long side.
 
 ## Install it as an app on your phone
 
