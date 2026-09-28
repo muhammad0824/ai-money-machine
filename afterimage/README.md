@@ -13,12 +13,12 @@ Effects run top to bottom. Use the arrows on each card to change the order: post
 | Tone | Brightness, contrast, saturation, hue shift, crush blacks |
 | Layers | Stacks up to 8 photos on the base. Each layer has its own blend mode (screen, color bleed, soft light, overlay, hard light, lighten, add, color dodge, multiply, darken, difference, exclusion, luminosity), strength, **bleed** (softens the layer so its colors spill past their edges), zoom, pan, and where it shows (whole frame, the layer's own brights or darks, the shadows or highlights below, or a glowing window). Reorder, hide, remove, or swap any layer with the base. |
 | Solarize | Flips tones above a threshold (the Sabattier darkroom effect) |
-| Posterize | Snaps each color channel into flat bands |
+| Posterize (RGB lattice) | Snaps each color channel to fixed levels. Surprise me no longer picks it |
 | Color map | Repaints shadows through highlights with a palette (Pop Eye, Neon Dusk, Sodium, Cyanotype, Acid, Infrared) |
 | Pixel streak | Smears pixels into long lines or drips of light, downward, upward or sideways |
 | Byte corrupt | Encodes the image as a JPEG (quality slider), flips bits, shifts or duplicates runs of bytes inside the compressed scan data (never the header), then decodes the wreckage. If a damaged file won't decode it retries with new offsets. **Generations** repeats this, feeding each result back in. An optional mask (bright areas, dark areas or edges) limits where the damage shows. **New damage pattern** reseeds it. |
 | Glitch | RGB channel split and displaced slices |
-| Finish | Vignette and film grain |
+| Finish | Vignette and grain, both off by default |
 
 ## Recipes
 
@@ -30,6 +30,10 @@ Effects run top to bottom. Use the arrows on each card to change the order: post
 - **Sabattier**, **Ghost Signal**, **Infrared Drip**: more starting points
 
 **Surprise me** picks which effects to use, the order they run in, which photo layers are on and how they're stacked, and their settings. A toast shows the order it chose. Hold the image (or press **Hold to see original**) to compare with the original photo. **Export** saves a PNG up to 3200 px on the long side.
+
+## Development
+
+Afterimage v2 is built row by row from [`SPEC.md`](SPEC.md). Each row's checks go into [`TESTS.md`](TESTS.md) and run with `node afterimage/tests/run.mjs [photo-dir]` (headless Chromium through Playwright).
 
 ## Install it as an app on your phone
 

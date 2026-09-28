@@ -411,7 +411,7 @@ const FX = [
     { k: 'threshold', label: 'Flip above', min: 0, max: 255, v: 128 },
     { k: 'mix',       label: 'Strength',   min: 0, max: 100, v: 100, unit: '%' },
   ]},
-  { key: 'poster', name: 'Posterize', hint: 'Snap colors into flat bands', c: [
+  { key: 'poster', name: 'Posterize (RGB lattice)', hint: 'Snap each color channel to fixed levels', c: [
     { k: 'levels', label: 'Levels per channel', min: 2, max: 10, v: 3 },
     { k: 'mix',    label: 'Strength', min: 0, max: 100, v: 100, unit: '%' },
   ]},
@@ -442,12 +442,12 @@ const FX = [
   ]},
   { key: 'glitch', name: 'Glitch', hint: 'Split color channels and slip slices', c: [
     { k: 'shift',    label: 'Color split', min: 0, max: 40, v: 8 },
-    { k: 'slices',   label: 'Slices', min: 0, max: 40, v: 10 },
+    { k: 'slices',   label: 'Slices', min: 0, max: 40, v: 0 },
     { k: 'displace', label: 'Slice slip', min: 0, max: 100, v: 30, unit: '%' },
   ]},
   { key: 'finish', name: 'Finish', hint: 'Vignette and film grain', c: [
-    { k: 'vignette', label: 'Vignette', min: 0, max: 100, v: 35, unit: '%' },
-    { k: 'grain',    label: 'Grain', min: 0, max: 100, v: 10, unit: '%' },
+    { k: 'vignette', label: 'Vignette', min: 0, max: 100, v: 0, unit: '%' },
+    { k: 'grain',    label: 'Grain', min: 0, max: 100, v: 0, unit: '%' },
   ]},
 ];
 const FX_KEYS = FX.map(f => f.key);
@@ -513,7 +513,6 @@ const PRESETS = [
     adjust: { contrast: 55, saturation: 230, black: 20, brightness: 5 },
     poster: { levels: 3, mix: 100 },
     gmap: { palette: 'popeye', amount: 35, hard: true },
-    finish: { vignette: 0, grain: 4 },
   }},
   { id: 'bleed', name: 'Color Bleed', p: {
     adjust: { contrast: 35, saturation: 160, black: 10 },
@@ -521,14 +520,12 @@ const PRESETS = [
       { mode: 'colorbleed', mask: 'full', opacity: 80, bleed: 45, scale: 100 },
       { mode: 'screen', mask: 'layerbright', opacity: 85, bleed: 20, scale: 120 },
     ],
-    finish: { vignette: 30, grain: 8 },
   }},
   { id: 'datarot', name: 'Data Rot', p: {
     order: ['adjust', 'corrupt', 'poster'],
     adjust: { contrast: 35, saturation: 170, black: 10 },
     corrupt: { op: 'dup', quality: 45, count: 8, run: 40, generations: 2, mask: 'none' },
     poster: { levels: 4, mix: 80 },
-    finish: { vignette: 25, grain: 4 },
   }},
   { id: 'window', name: 'Window Glow', p: {
     adjust: { contrast: 30, saturation: 120, black: 45, brightness: -20 },
@@ -536,19 +533,16 @@ const PRESETS = [
       { mode: 'screen', mask: 'window', opacity: 100, bleed: 0, winSize: 45, winX: 25, surround: 78, scale: 110 },
     ],
     gmap: { palette: 'dusk', amount: 20, hard: false },
-    finish: { vignette: 55, grain: 8 },
   }},
   { id: 'rain', name: 'Light Rain', p: {
     adjust: { contrast: 35, saturation: 80, black: 12, brightness: 0 },
     streak: { style: 'smear', dir: 'down', length: 70, coverage: 90, span: 60, threshold: 25, fibers: 60, mix: 95 },
     gmap: { palette: 'sodium', amount: 35, hard: false },
-    finish: { vignette: 30, grain: 12 },
   }},
   { id: 'edgedecay', name: 'Edge Decay', p: {
     adjust: { contrast: 40, saturation: 130, black: 15 },
     corrupt: { op: 'mix', quality: 55, count: 30, run: 16, generations: 5, mask: 'edges', maskAt: 22 },
     gmap: { palette: 'acid', amount: 25, hard: false },
-    finish: { vignette: 40, grain: 6 },
   }},
   { id: 'stacked', name: 'Stacked Light', p: {
     adjust: { contrast: 25, saturation: 140, black: 25, brightness: -10 },
@@ -556,7 +550,6 @@ const PRESETS = [
       { mode: 'add', mask: 'layerbright', opacity: 75, bleed: 10, scale: 100 },
       { mode: 'screen', mask: 'shadows', opacity: 90, bleed: 60, scale: 150 },
     ],
-    finish: { vignette: 45, grain: 10 },
   }},
   { id: 'bytebloom', name: 'Byte Bloom', p: {
     order: ['adjust', 'expose', 'corrupt', 'gmap'],
@@ -564,7 +557,6 @@ const PRESETS = [
     layers: [{ mode: 'screen', mask: 'layerbright', opacity: 80, bleed: 30, scale: 110 }],
     corrupt: { op: 'shift', quality: 50, count: 18, run: 64, generations: 3, mask: 'bright', maskAt: 45 },
     gmap: { palette: 'dusk', amount: 30, hard: false },
-    finish: { vignette: 35, grain: 6 },
   }},
   { id: 'melt', name: 'Melt', p: {
     adjust: { contrast: 30, saturation: 190 },
@@ -573,26 +565,23 @@ const PRESETS = [
       { mode: 'colorbleed', mask: 'highlights', opacity: 70, bleed: 85, scale: 130 },
     ],
     streak: { style: 'smear', dir: 'down', length: 25, coverage: 45, span: 100, threshold: 120, fibers: 30, mix: 70 },
-    finish: { vignette: 35, grain: 6 },
   }},
   { id: 'sabattier', name: 'Sabattier', p: {
     adjust: { contrast: 40, saturation: 60 },
     solar: { threshold: 120, mix: 100 },
     gmap: { palette: 'cyano', amount: 70, hard: false },
-    finish: { vignette: 30, grain: 14 },
   }},
   { id: 'ghost', name: 'Ghost Signal', p: {
     adjust: { contrast: 45, saturation: 180 },
     layers: [{ mode: 'difference', mask: 'shadows', opacity: 70, bleed: 0, scale: 130 }],
     poster: { levels: 4, mix: 100 },
-    glitch: { shift: 12, slices: 14, displace: 40 },
+    glitch: { shift: 12, slices: 0 },
   }},
   { id: 'infrared', name: 'Infrared Drip', p: {
     adjust: { contrast: 35, saturation: 140 },
     layers: [{ mode: 'lighten', mask: 'full', opacity: 55, bleed: 15, scale: 100 }],
     streak: { style: 'trails', dir: 'down', length: 35, coverage: 55, span: 100, threshold: 150, fibers: 30, mix: 100 },
     gmap: { palette: 'infrared', amount: 75, hard: false },
-    finish: { vignette: 40, grain: 6 },
   }},
 ];
 
@@ -1394,14 +1383,15 @@ function surprise() {
   const TAME = {
     adjust: () => ({ contrast: ri(10, 65), saturation: ri(70, 240), brightness: ri(-20, 8), hue: R() < 0.3 ? ri(-180, 180) : 0, black: ri(0, 40) }),
     solar: () => ({ threshold: ri(90, 200), mix: ri(60, 100) }),
-    poster: () => ({ levels: ri(2, 5), mix: ri(70, 100) }),
     gmap: () => ({ palette: pick(Object.keys(PALETTES)), amount: ri(25, 90), hard: R() < 0.4 }),
     corrupt: () => ({ op: pick(['flip', 'shift', 'dup', 'mix']), quality: ri(15, 85), count: ri(3, 40), run: ri(4, 96), generations: ri(1, 4),
       mask: R() < 0.5 ? 'none' : pick(['bright', 'dark', 'edges']), maskAt: ri(15, 70), reroll: ri(0, 9999) }),
-    glitch: () => ({ shift: ri(0, 20), slices: ri(0, 24), displace: ri(5, 60) }),
-    finish: () => ({ vignette: ri(0, 60), grain: ri(0, 18) }),
+    glitch: () => ({ shift: ri(3, 20), slices: 0 }),
   };
-  const pool = FX_KEYS.filter(k => k !== 'expose' || s.layers.length);
+  // Never generated: the RGB-lattice posterize (kept for manual use) and Finish,
+  // whose vignette and grain stay at 0 unless you turn them up yourself.
+  const NOT_GENERATED = ['poster', 'finish'];
+  const pool = FX_KEYS.filter(k => !NOT_GENERATED.includes(k) && (k !== 'expose' || s.layers.length));
   const chosen = shuffle([...pool]).slice(0, ri(3, Math.min(6, pool.length)));
   for (const key of chosen) {
     const p = s[key]; p.on = true;
@@ -1540,6 +1530,15 @@ $('#bigger').addEventListener('click', e => {
 if ('serviceWorker' in navigator && location.protocol === 'https:') {
   navigator.serviceWorker.register('sw.js').catch(() => {});
 }
+
+// Read-only handle for afterimage/tests/run.mjs. The app itself never reads it.
+window.__afterimageTest = Object.freeze({
+  FX, PRESETS, defaults, withPreset, surprise,
+  getState: () => JSON.parse(JSON.stringify(state)),
+  photoId: () => primaryId,
+  workSize: () => fitSize(primary, WORK_MAX),
+  render: (S, W, H) => processImage(S, W, H),
+});
 
 /* ---------- boot ---------- */
 buildPresets();
