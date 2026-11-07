@@ -8,7 +8,7 @@ import { countUnprocessed } from "./scheduler";
 import { getCachedGraph } from "../graph/cache";
 import { composeGraphWithManual } from "../graph/compose";
 import { visibilityReason } from "../graph/linkPolicy";
-import { RSS_FEEDS } from "./feeds";
+import { getRssFeeds } from "./feeds";
 
 const router = Router();
 router.get("/pipeline/status", async (_req, res) => {
@@ -33,7 +33,7 @@ router.get("/pipeline/status", async (_req, res) => {
   const n = (reason: string) => reasons.filter((r) => r === reason).length;
   const linkN = (s: string) => allEdges.filter((e) => (e.linkState ?? "inconclusive") === s).length;
   const counts = new Map(feeds.rows.map((r) => [String(r.feed_source), r]));
-  const configured = new Map(RSS_FEEDS.map((f) => [f.feedSource, f.outletName]));
+  const configured = new Map(getRssFeeds().map((f) => [f.feedSource, f.outletName]));
   for (const source of counts.keys()) if (!configured.has(source)) configured.set(source, "Historical feed");
   res.setHeader("Cache-Control", "no-store");
   res.json(GetPipelineStatusResponse.parse({

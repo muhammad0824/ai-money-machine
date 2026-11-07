@@ -2,7 +2,7 @@ import Parser from "rss-parser";
 import { createHash } from "crypto";
 import { db, articlesTable } from "@workspace/db";
 import { inArray } from "drizzle-orm";
-import { RSS_FEEDS, OUTLET_DOMAIN_MAP, type FeedConfig } from "./feeds";
+import { getRssFeeds, OUTLET_DOMAIN_MAP, type FeedConfig } from "./feeds";
 import { logger } from "../../lib/logger";
 import { getCoverageStart } from "../graph/coverage";
 
@@ -125,7 +125,8 @@ async function fetchFeed(feed: FeedConfig): Promise<ParsedArticle[]> {
 }
 
 export async function fetchAndStoreArticles(): Promise<number> {
-  const results = await Promise.allSettled(RSS_FEEDS.map(fetchFeed));
+  const feeds = getRssFeeds();
+  const results = await Promise.allSettled(feeds.map(fetchFeed));
   const all: ParsedArticle[] = results.flatMap((r) =>
     r.status === "fulfilled" ? r.value : [],
   );
@@ -153,7 +154,7 @@ export async function fetchAndStoreArticles(): Promise<number> {
   for (const row of inserted) lastFeedReport[row.feedSource]!.ingested++;
 
   logger.info(
-    { count: newArticles.length, total: unique.length, feeds: RSS_FEEDS.length },
+    { count: newArticles.length, total: unique.length, feeds: feeds.length },
     "Stored new articles",
   );
   return inserted.length;

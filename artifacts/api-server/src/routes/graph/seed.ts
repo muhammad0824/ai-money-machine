@@ -516,7 +516,7 @@ export const seedGraph: GeneratedGraph = {
   // ── Edges ──────────────────────────────────────────────────────────────
   // All previously-curated deal edges (investments, licensing, lawsuits,
   // infrastructure, CHIPS Act grants, etc.) have been removed: every one of
-  // them predates the strict rolling 6-month coverage window enforced in
+  // them predates the strict rolling coverage window (COVERAGE_WINDOW_MONTHS) enforced in
   // compose.ts, and none qualified for the sole exception (an undated
   // structural "ownership" edge, e.g. parent company owns outlet, carrying a
   // verified working source link). Company nodes above are kept as known
