@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "AI Money Machine"
+version = "1.0.0"
+id = "artifacts/ai-money-machine"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 24133
+
+[services.development]
+run = "pnpm --filter @workspace/ai-money-machine run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/ai-money-machine", "run", "build" ]
+publicDir = "artifacts/ai-money-machine/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "24133"
+BASE_PATH = "/"
