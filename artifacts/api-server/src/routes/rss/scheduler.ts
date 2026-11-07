@@ -8,7 +8,7 @@ import { db, articlesTable } from "@workspace/db";
 import { and, gte, lte, isNull, count } from "drizzle-orm";
 import { getCoverageStart } from "../graph/coverage";
 import { readState, writeState, withPipelineLock } from "./state";
-import { prepareRecovery, updateRecoveryProgress } from "./recovery";
+import { prepareRecovery, prepareWindowExtension, updateRecoveryProgress } from "./recovery";
 
 const INTERVAL_MS = 30 * 60 * 1000;
 let running = false;
@@ -49,6 +49,7 @@ async function runPipelineCycle(): Promise<void> {
   try {
     await withPipelineLock(async () => {
       await prepareRecovery();
+      await prepareWindowExtension();
       const state = await readState();
       state.running = true; state.lastStartedAt = new Date().toISOString(); state.lastError = null;
       await writeState(state);
@@ -85,10 +86,16 @@ async function drainCheckpoint(): Promise<void> {
       const pending = await countUnprocessed();
       if (!pending) {
         if (backlogState.running) { backlogState.running = false; backlogState.completedAt = new Date().toISOString(); }
+        if (state.windowExtension && !state.windowExtension.completedAt) {
+          state.windowExtension.completedAt = new Date().toISOString();
+          await writeState(state);
+        }
         await updateRecoveryProgress();
         return;
       }
-      if (!backlogState.running && state.recovery.completedAt) return;
+      // Drain continuously only during recovery, a window extension, or a requested backlog run.
+      const extending = !!state.windowExtension && !state.windowExtension.completedAt;
+      if (!backlogState.running && state.recovery.completedAt && !extending) return;
       // Persist the extraction heartbeat separately from feed-ingestion timing.
       state.running = true;
       await writeState(state);

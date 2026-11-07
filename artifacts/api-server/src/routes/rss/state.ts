@@ -12,6 +12,14 @@ export interface Recovery {
   lastError: string | null;
   orphanedEdgeIds: string[];
 }
+export interface WindowExtension {
+  fromMonths: number;
+  toMonths: number;
+  startedAt: string;
+  completedAt: string | null;
+  /** Stored articles that fell inside the newly covered months and were queued for re-extraction. */
+  resetArticles: number;
+}
 export interface PipelineState {
   running: boolean;
   lastStartedAt: string | null;
@@ -20,6 +28,9 @@ export interface PipelineState {
   lastRunIngested: number;
   feeds: Record<string, { ingested: number; error: string | null }>;
   recovery: Recovery;
+  /** Window (months) the stored articles were last reconciled against; absent means the original 6. */
+  coverageMonths?: number;
+  windowExtension?: WindowExtension;
 }
 const KEY = "pipeline-status-v2";
 export const emptyState = (): PipelineState => ({

@@ -1,7 +1,7 @@
 import { db, graphCacheTable } from "@workspace/db";
 import { eq, sql } from "drizzle-orm";
 import { getCachedGraph, saveGraphToCache } from "../graph/cache";
-import { getCoverageStart } from "../graph/coverage";
+import { getCoverageStart, COVERAGE_WINDOW_MONTHS, PREVIOUS_COVERAGE_WINDOW_MONTHS, windowExtensionRange } from "../graph/coverage";
 import { readState, writeState } from "./state";
 
 /** One-time, transactional DATA repair per environment, not a schema migration.
@@ -83,4 +83,31 @@ export async function updateRecoveryProgress(): Promise<void> {
         ? { ...e, hiddenReason: "unsupported_transaction" } : e) });
   }
   await writeState(state);
+}
+
+/**
+ * One-time, per environment, when COVERAGE_WINDOW_MONTHS grows: stored articles in the
+ * newly covered months were extracted under older rules (or not at all), so queue them
+ * for re-extraction under the current evidence standard. Their old edges stay archived
+ * until a fresh extraction supports them. Called under the shared pipeline lock.
+ */
+export async function prepareWindowExtension(now = new Date()): Promise<void> {
+  const state = await readState();
+  const from = state.coverageMonths ?? PREVIOUS_COVERAGE_WINDOW_MONTHS;
+  if (from === COVERAGE_WINDOW_MONTHS) return;
+  const range = windowExtensionRange(from, COVERAGE_WINDOW_MONTHS, now);
+  await db.transaction(async (tx) => {
+    const reset = range ? await tx.execute(sql`
+      UPDATE articles SET processed_at = NULL
+      WHERE published_at >= ${range.start} AND published_at < ${range.end} AND processed_at IS NOT NULL
+      RETURNING id`) : null;
+    const resetArticles = reset?.rowCount ?? 0;
+    state.coverageMonths = COVERAGE_WINDOW_MONTHS;
+    state.windowExtension = {
+      fromMonths: from, toMonths: COVERAGE_WINDOW_MONTHS, startedAt: now.toISOString(),
+      completedAt: resetArticles ? null : now.toISOString(), resetArticles,
+    };
+    await tx.insert(graphCacheTable).values({ id: "pipeline-status-v2", data: state })
+      .onConflictDoUpdate({ target: graphCacheTable.id, set: { data: state, updatedAt: new Date() } });
+  });
 }

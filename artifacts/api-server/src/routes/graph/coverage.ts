@@ -8,12 +8,21 @@
  * relationships (e.g. a parent company owning a news outlet) rather than
  * dated deals — that exception is applied by callers, not here.
  */
-export const COVERAGE_WINDOW_MONTHS = 6;
+export const COVERAGE_WINDOW_MONTHS = 12;
 
-export function getCoverageStart(referenceDate: Date = new Date()): Date {
+/** The window the deployed pipeline used before COVERAGE_WINDOW_MONTHS was raised to 12. */
+export const PREVIOUS_COVERAGE_WINDOW_MONTHS = 6;
+
+export function getCoverageStart(referenceDate: Date = new Date(), months = COVERAGE_WINDOW_MONTHS): Date {
   const d = new Date(referenceDate.getTime());
-  d.setMonth(d.getMonth() - COVERAGE_WINDOW_MONTHS);
+  d.setMonth(d.getMonth() - months);
   return d;
+}
+
+/** Pure: the published_at range a window change newly brings into coverage, or null if it shrinks or stays. */
+export function windowExtensionRange(fromMonths: number, toMonths: number, now: Date): { start: string; end: string } | null {
+  if (toMonths <= fromMonths) return null;
+  return { start: getCoverageStart(now, toMonths).toISOString(), end: getCoverageStart(now, fromMonths).toISOString() };
 }
 
 export function isWithinCoverage(announcedAt: string | null | undefined): boolean {
